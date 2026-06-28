@@ -1,4 +1,4 @@
-# Sistema de Transporte - SIBASI
+# Sistema de Transporte 
 
 Descripción
 -----------
