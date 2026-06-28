@@ -1,0 +1,12 @@
+# Archivos de configuración de CLASP (CRUCIAL)
+# Este archivo contiene el ID del Script y no debe ser versionado.
+.clasp.json
+
+# Directorios de dependencias (si usas npm para herramientas de desarrollo)
+node_modules/
+
+# Archivos de configuración de Visual Studio Code
+.vscode/
+
+# Archivos de log/temporales (p.ej., para pruebas o depuración)
+*.log

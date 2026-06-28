@@ -1,0 +1,1822 @@
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  //variale global para el usuario
+  let usuarioLogueado = {};
+
+// Validar login
+function validarLogin() {
+  const user = document.getElementById('usuario').value.trim();
+  const pass = document.getElementById('password').value.trim();
+  const btnIngresar = document.querySelector('button[onclick="validarLogin()"]');
+
+  // Desactivar botón de ingresar
+  btnIngresar.disabled = true;
+
+  // Mostrar SweetAlert
+  Swal.fire({
+    title: 'Verificando credenciales',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  google.script.run.withSuccessHandler(function (datosUsuario) {
+    Swal.close();
+    btnIngresar.disabled = false;
+
+    if (!datosUsuario) {
+      document.getElementById('usuario').value = "";
+      document.getElementById('password').value = "";
+      Swal.fire({
+        icon: "error",
+        title: "Usuario incorrecto",
+        text: "Credenciales inválidas o usuario inactivo",
+      });
+    } else {
+      usuarioLogueado = datosUsuario;
+
+      // Mostrar interfaz
+      document.getElementById('usuario').value = "";
+      document.getElementById('password').value = "";
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('sidebar').style.display = 'block';
+      document.getElementById('main-content').style.display = 'block';
+
+      actualizarPanelUsuario(); // actualizar datos en el panel
+      aplicarPermisosSegunRol(datosUsuario.TUser);
+      iniciarAplicacion();
+
+      // 🔹 Función de permisos por rol
+      function aplicarPermisosSegunRol(tipoUsuario) {
+        const tipo = (tipoUsuario || "").toLowerCase(); // normaliza a minúsculas
+
+        // Secciones visibles para administrador
+        const seccionesAdmin = [
+          "contenido-vehiculos",
+          "contenido-motoristas",
+          "contenido-solicitudes",
+          "contenido-solicitudes-nuevas",
+          "contenido-solicitudes-procesadas",
+          "contenido-consultas"
+        ];
+
+        // Secciones visibles para usuario
+        const seccionesUsuario = [
+          "contenido-inicio",
+          "contenido-solicitudes",
+          "contenido-solicitudes-procesadas"
+        ];
+
+        // Ocultar todas primero
+        seccionesAdmin.forEach(id => {
+          const link = document.querySelector(`[data-seccion="${id}"]`);
+          if (link) link.style.display = "none";
+        });
+        seccionesUsuario.forEach(id => {
+          const link = document.querySelector(`[data-seccion="${id}"]`);
+          if (link) link.style.display = "none";
+        });
+
+        // Mostrar según rol
+        let seccionesVisibles = [];
+        if (tipo === "administrador") {
+          seccionesVisibles = seccionesAdmin;
+        } else if (tipo === "operador") {
+          seccionesVisibles = seccionesUsuario;
+          document.getElementById("USERINSERT").style.display ="none";
+        }
+
+        seccionesVisibles.forEach(id => {
+          const link = document.querySelector(`[data-seccion="${id}"]`);
+          if (link) link.style.display = "block";
+        });
+      }
+
+      // 🔹 Mostrar contenido principal por defecto
+      document.querySelectorAll('#main-content > div').forEach(div => div.style.display = 'none');
+      document.getElementById('contenido-inicio').style.display = 'block';
+    }
+  }).withFailureHandler(function (err) {
+    Swal.close();
+    btnIngresar.disabled = false;
+    btnIngresar.innerHTML = 'Ingresar';
+    alert('Error al conectar con el servidor.');
+    console.error(err);
+  }).verificarUsuario(user, pass);
+}
+
+
+// Sidebar toggle
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const content = document.getElementById('main-content');
+  sidebar.classList.toggle('collapsed');
+  content.classList.toggle('collapsed');
+}
+
+// Activar links del menú
+document.querySelectorAll('#nav-menu .nav-link').forEach(link => {
+  link.addEventListener('click', function (e) {
+    e.preventDefault();
+    document.querySelectorAll('#nav-menu .nav-link').forEach(l => l.classList.remove('active-link'));
+    this.classList.add('active-link');
+
+    const seccion = this.getAttribute('data-seccion');
+    document.querySelectorAll('#main-content > div').forEach(div => div.style.display = 'none');
+    if (seccion) {
+      document.getElementById(seccion).style.display = 'block';
+    }
+
+  });
+});
+function iniciarAplicacion(){
+  listarUsuarios();
+  listarMotoristas();
+  listarAutomoviles();
+  listarSolicitudesE();
+  listarSolicitudesN();
+  listarSolicitudesP();
+}
+
+// Para mostrar los datos del usuario que se logueo
+function actualizarPanelUsuario() {
+  if (usuarioLogueado && usuarioLogueado.Nombre) {
+    document.getElementById('user-name-display').textContent = usuarioLogueado.Nombre;
+    document.getElementById('user-position-display').textContent = usuarioLogueado.Cargo;
+    document.getElementById('user-location-display').textContent = usuarioLogueado.Establecimiento;
+  }
+}
+// Variable global para almacenar establecimientos
+var establecimientosData = [];
+
+// SELECT2 PARA USUARIOS 
+/////////////////////////////////////////////////////////////////////////////////////
+function inicializarSelect2EstablecimientosUser() {
+  google.script.run.withSuccessHandler(function(data) {
+    establecimientosData = JSON.parse(data);
+    
+    // Modal NUEVO usuario
+    const $selectNuevo = $('#EstablecimientoUser');
+    $selectNuevo.empty().append('<option></option>');
+    establecimientosData.forEach(est => {
+      $selectNuevo.append(new Option(est.Establecimiento, est.Establecimiento));
+    });
+    
+    // Modal EDITAR usuario
+    const $selectEdit = $('#EstablecimientoUserEditSelect');
+    $selectEdit.empty().append('<option></option>');
+    establecimientosData.forEach(est => {
+      $selectEdit.append(new Option(est.Establecimiento, est.Establecimiento));
+    });
+    
+    // Inicializar Select2 por separado para cada modal
+    // Select2 para modal NUEVO
+    $('#EstablecimientoUser').select2({
+      placeholder: "Seleccione un establecimiento",
+      width: '100%',
+      dropdownParent: $('#modalUsuario')
+    });
+    
+    // Select2 para modal EDITAR
+    $('#EstablecimientoUserEditSelect').select2({
+      placeholder: "Seleccione un establecimiento",
+      width: '100%',
+      dropdownParent: $('#modalEditarUsuario')
+    });
+    
+  }).obtenerEstablecimientosCompletos();
+}
+
+// Función para autocompletar campos
+function autocompletarCamposEstablecimiento(establecimientoNombre, esEdicion) {
+  const establecimiento = establecimientosData.find(est => est.Establecimiento === establecimientoNombre);
+  
+  if (establecimiento) {
+    if (esEdicion) {
+      $('#DistritoUserEdit').val(establecimiento.Distrito);
+      $('#MunicipioUserEdit').val(establecimiento.Municipio);
+      $('#SIBASIUserEdit').val(establecimiento.SIBASI);
+      $('#DepartamentoUserEdit').val(establecimiento.Departamento);
+      $('#RegionalUserEdit').val(establecimiento.Regional);
+    } else {
+      $('#DistritoUser').val(establecimiento.Distrito);
+      $('#MunicipioUser').val(establecimiento.Municipio);
+      $('#SIBASIUser').val(establecimiento.SIBASI);
+      $('#DepartamentoUser').val(establecimiento.Departamento);
+      $('#RegionalUser').val(establecimiento.Regional);
+    }
+  }
+}
+
+// Eventos para usuarios
+$(document).ready(function() {
+  // Inicializar al cargar la página
+  inicializarSelect2EstablecimientosUser();
+  
+  // Evento para autocompletar campos
+  $('#EstablecimientoUser').on('change', function() {
+    autocompletarCamposEstablecimiento($(this).val(), false);
+  });
+  
+  $('#EstablecimientoUserEditSelect').on('change', function() {
+    autocompletarCamposEstablecimiento($(this).val(), true);
+  });
+  
+  // Limpiar modal al cerrarse 
+  $('#modalUsuario').on('hidden.bs.modal', function() {
+    // Limpiar campos normales
+    $(this).find('input:not([disabled]), select:not(.select2-hidden-accessible)').val('');
+    $(this).find('input[disabled]').val('');
+    
+    // Limpiar y resetear Select2
+    $('#EstablecimientoUser').val('').trigger('change');
+  });
+  
+  $('#modalEditarUsuario').on('hidden.bs.modal', function() {
+    // Limpiar campos normales
+    $(this).find('input:not([disabled]), select:not(.select2-hidden-accessible)').val('');
+    $(this).find('input[disabled]').val('');
+    
+    // Limpiar y resetear Select2
+    $('#EstablecimientoUserEditSelect').val('').trigger('change');
+  });
+});
+
+// FUNCIONES DE USUARIOS
+// ==============================================
+// GUARDAR NUEVO USUARIO
+// ==============================================
+function guardarUsuario() {
+  const User = document.getElementById('User').value.trim();
+  const Password = document.getElementById('Password').value.trim();
+  const TUser = document.getElementById('TUser').value.trim();
+  const Nombre = document.getElementById('Nombre').value.trim();
+  const Cargo = document.getElementById('Cargo').value.trim();
+  const Area = document.getElementById('Area').value.trim();
+  const Establecimiento = $('#EstablecimientoUser').val();
+  const Distrito = document.getElementById('DistritoUser').value.trim();
+  const Municipio = document.getElementById('MunicipioUser').value.trim();
+  const SIBASI = document.getElementById('SIBASIUser').value.trim();
+  const Departamento = document.getElementById('DepartamentoUser').value.trim();
+  const Regional = document.getElementById('RegionalUser').value.trim();
+  const Estado = document.getElementById('EstadoUser').value.trim();
+
+  if (!User || !Password || !TUser || !Nombre || !Cargo || !Area || !Establecimiento || !Estado) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  if (!User.includes('@salud.gob.sv')) {
+    Swal.fire({ icon: "error", title: "Email inválido", text: "El correo debe contener @salud.gob.sv" });
+    return;
+  }
+
+  const btnGuardar = document.querySelector('#modalUsuario .btn-primary');
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+  const nuevoUsuario = {
+    User, Password, TUser, Nombre, Cargo, Area, Establecimiento, Distrito, Municipio, SIBASI, Departamento, Regional, Estado
+  };
+
+  google.script.run
+    .withSuccessHandler(() => {
+      const tabla = $('#tablaUsuarios').DataTable();
+      const estadoBadge = Estado == 1
+        ? '<span class="badge bg-success">Activo</span>'
+        : '<span class="badge bg-danger">Inactivo</span>';
+      tabla.row.add([
+        User, Password, TUser, Nombre, Cargo, Area, Establecimiento, Distrito, Municipio, SIBASI, Departamento, Regional, estadoBadge
+      ]).draw(false);
+
+      bootstrap.Modal.getInstance(document.getElementById('modalUsuario')).hide();
+      Swal.fire({ icon: "success", title: "¡Guardado!", text: "Usuario registrado correctamente.", timer: 2000 });
+      
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = 'Guardar';
+    })
+    .withFailureHandler(error => {
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = 'Guardar';
+    })
+    .guardarUsuarioEnHoja(nuevoUsuario);
+}
+
+// ==============================================
+// ACTUALIZAR USUARIO EXISTENTE
+// ==============================================
+function actualizarUsuario() {
+  const index = parseInt(document.getElementById('UsuarioRowIndexEdit').value);
+  const User = document.getElementById('UserEdit').value.trim();
+  const Password = document.getElementById('PasswordEdit').value.trim();
+  const TUser = document.getElementById('TUserEdit').value.trim();
+  const Nombre = document.getElementById('NombreEdit').value.trim();
+  const Cargo = document.getElementById('CargoEdit').value.trim();
+  const Area = document.getElementById('AreaEdit').value.trim();
+  const Establecimiento = $('#EstablecimientoUserEditSelect').val();
+  const Distrito = document.getElementById('DistritoUserEdit').value.trim();
+  const Municipio = document.getElementById('MunicipioUserEdit').value.trim();
+  const SIBASI = document.getElementById('SIBASIUserEdit').value.trim();
+  const Departamento = document.getElementById('DepartamentoUserEdit').value.trim();
+  const Regional = document.getElementById('RegionalUserEdit').value.trim();
+  const Estado = document.getElementById('EstadoUserEdit').value.trim();
+
+  if (!User || !Password || !TUser || !Nombre || !Cargo || !Area || !Establecimiento || !Estado) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  if (!User.includes('@salud.gob.sv')) {
+    Swal.fire({ icon: "error", title: "Email inválido", text: "El correo debe contener @salud.gob.sv" });
+    return;
+  }
+
+  const btnActualizar = document.querySelector('#modalEditarUsuario .btn-primary');
+  btnActualizar.disabled = true;
+  btnActualizar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+  const usuarioActualizado = {
+    User, Password, TUser, Nombre, Cargo, Area, Establecimiento, Distrito, Municipio, SIBASI, Departamento, Regional, Estado
+  };
+
+  google.script.run
+    .withSuccessHandler(() => {
+      const tabla = $('#tablaUsuarios').DataTable();
+      const estadoBadge = Estado == 1
+        ? '<span class="badge bg-success">Activo</span>'
+        : '<span class="badge bg-danger">Inactivo</span>';
+      tabla.row(index).data([
+        User, Password, TUser, Nombre, Cargo, Area, Establecimiento, Distrito, Municipio, SIBASI, Departamento, Regional, estadoBadge
+      ]).draw(false);
+
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarUsuario')).hide();
+      Swal.fire({ icon: "success", title: "¡Actualizado!", text: "Datos modificados correctamente.", timer: 2000 });
+      
+      btnActualizar.disabled = false;
+      btnActualizar.innerHTML = 'Actualizar';
+    })
+    .withFailureHandler(error => {
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      btnActualizar.disabled = false;
+      btnActualizar.innerHTML = 'Actualizar';
+    })
+    .actualizarUsuarioEnHoja(usuarioActualizado, index + 2);
+}
+
+// ==============================================
+// CONFIGURAR CLIC EN FILAS PARA USUARIOS
+// ==============================================
+function configurarClicFilaUsuarios() {
+  const tabla = $('#tablaUsuarios').DataTable();
+  $('#tablaUsuarios tbody').on('click', 'tr', function () {
+    const datos = tabla.row(this).data();
+    if (!datos) return;
+
+    document.getElementById('UsuarioRowIndexEdit').value = tabla.row(this).index();
+
+    document.getElementById('UserEdit').value = datos[0];
+    document.getElementById('PasswordEdit').value = datos[1];
+    document.getElementById('TUserEdit').value = datos[2];
+    document.getElementById('NombreEdit').value = datos[3];
+    document.getElementById('CargoEdit').value = datos[4];
+    document.getElementById('AreaEdit').value = datos[5];
+    $('#EstablecimientoUserEditSelect').val(datos[6]).trigger('change');
+    document.getElementById('DistritoUserEdit').value = datos[7];
+    document.getElementById('MunicipioUserEdit').value = datos[8];
+    document.getElementById('SIBASIUserEdit').value = datos[9];
+    document.getElementById('DepartamentoUserEdit').value = datos[10];
+    document.getElementById('RegionalUserEdit').value = datos[11];
+    const estadoActual = $(datos[12]).text().trim() === 'Activo' ? '1' : '0';
+    document.getElementById('EstadoUserEdit').value = estadoActual;
+
+    new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+  });
+}
+
+// ==============================================
+// LISTAR USUARIOS
+// ==============================================
+function listarUsuarios() {
+  if ($.fn.DataTable.isDataTable('#tablaUsuarios')) {
+    $('#tablaUsuarios').DataTable().destroy();
+    $('#tablaUsuarios').empty();
+  }
+
+  google.script.run.withSuccessHandler(function (usuariosJSON) {
+    try {
+      const usuarios = JSON.parse(usuariosJSON);
+      let html = '';
+
+      usuarios.forEach(usuario => {
+        const estadoBadge = usuario.Estado == 1
+          ? '<span class="badge bg-success">Activo</span>'
+          : '<span class="badge bg-danger">Inactivo</span>';
+
+        html += `
+        <tr>
+          <td>${usuario.User || ''}</td>
+          <td>${usuario.Password || ''}</td>
+          <td>${usuario.TUser || ''}</td>
+          <td>${usuario.Nombre || ''}</td>
+          <td>${usuario.Cargo || ''}</td>
+          <td>${usuario.Area || ''}</td>
+          <td>${usuario.Establecimiento || ''}</td>
+          <td>${usuario.Distrito || ''}</td>
+          <td>${usuario.Municipio || ''}</td>
+          <td>${usuario.SIBASI || ''}</td>
+          <td>${usuario.Departamento || ''}</td>
+          <td>${usuario.Regional || ''}</td>
+          <td>${estadoBadge}</td>
+        </tr>`;
+      });
+
+      document.getElementById('cuerpoUsuarios').innerHTML = html;
+
+      $('#tablaUsuarios').DataTable({
+        language: {
+          decimal: ",",
+          thousands: ".",
+          lengthMenu: "Mostrar _MENU_ registros",
+          zeroRecords: "No se encontraron resultados",
+          info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+          infoEmpty: "Mostrando 0 a 0 de 0 registros",
+          infoFiltered: "(filtrado de _MAX_ registros totales)",
+          search: "Buscar:",
+          loadingRecords: "Cargando...",
+          processing: "Procesando...",
+          paginate: {
+            first: "Primero",
+            last: "Último",
+            next: "Siguiente",
+            previous: "Anterior"
+          }
+        },
+        columnDefs: [{
+          targets: [1, 7, 8, 9, 10, 11],
+          visible: false
+        }],
+        initComplete: function() {
+          configurarClicFilaUsuarios();
+        }
+      });
+    } catch (error) {
+      console.error('Error al procesar usuarios:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los datos de usuarios'
+      });
+    }
+  }).obtenerUsuariosJSON();
+}
+
+// SELECT2 PARA MOTORISTAS 
+function inicializarSelect2Establecimientos() {  
+  google.script.run.withSuccessHandler(function(data) {
+    try {
+      const establecimientos = JSON.parse(data);
+      
+      // Modal NUEVO motorista
+      const $selectNuevo = $('#Establecimientomo');
+      if ($selectNuevo.length) {
+        $selectNuevo.empty().append('<option></option>');
+        establecimientos.forEach(est => {
+          $selectNuevo.append(new Option(est, est));
+        });
+      }
+      
+      // Modal EDITAR motorista
+      const $selectEdit = $('#EstablecimientomoEditSelect');
+      if ($selectEdit.length) {
+        const valorActual = $selectEdit.val();
+        $selectEdit.empty().append('<option></option>');
+        establecimientos.forEach(est => {
+          $selectEdit.append(new Option(est, est));
+        });
+        if (valorActual) $selectEdit.val(valorActual).trigger('change');
+      }
+      
+      // Inicializar Select2
+      $('.select2-establecimiento').select2({
+        placeholder: "Seleccione un establecimiento",
+        width: '100%',
+        dropdownParent: $('#modalMotorista, #modalEditarMotorista')
+      });
+      
+
+    } catch (error) {
+      console.error('Error en Select2 motoristas:', error);
+    }
+  }).obtenerEstablecimientos();
+}
+
+// Eventos CORREGIDOS (sin reinicializar innecesariamente)
+$(document).ready(function() {
+  // Inicializar al cargar la página
+  inicializarSelect2Establecimientos();
+  
+  // Reinicializar solo el select2 del modal al abrirlo (evita duplicados)
+  $('#modalMotorista, #modalEditarMotorista').on('shown.bs.modal', function() {
+    const $select = $(this).find('.select2-establecimiento');
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+    $select.select2({
+      placeholder: "Seleccione un establecimiento",
+      width: '100%',
+      dropdownParent: $(this)
+    });
+  });
+});
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FUNCIONES DE MOTORISTAS
+// ==============================================
+// GUARDAR NUEVO MOTORISTA
+// ==============================================
+function guardarMotorista() {
+  // Obtener todos los valores del formulario
+  const Nombre = document.getElementById('Nombremo').value.trim();
+  const Fechnat = document.getElementById('Fechnat').value.trim();
+  const Fechingre = document.getElementById('Fechingre').value.trim();
+  const Tlicencia = document.getElementById('Tlicencia').value.trim();
+  const Nlicencia = document.getElementById('Nlicencia').value.trim();
+  const DUI = document.getElementById('DUI').value.trim();
+  const FECHVENLIC = document.getElementById('FECHVENLIC').value.trim();
+  const Tsangre = document.getElementById('Tsangre').value.trim();
+  const EnfeCroc = document.getElementById('EnfeCroc').value.trim();
+  const Estado = document.getElementById('Estadomo').value.trim();
+  const FamEmerger = document.getElementById('FamEmerger').value.trim();
+  const NumEMer = document.getElementById('NumEMer').value.trim();
+  const Establecimiento = $('#Establecimientomo').val();
+
+  // Función para normalizar fechas
+  const crearFechaComparable = (fechaStr) => {
+    const fecha = new Date(fechaStr);
+    fecha.setHours(0, 0, 0, 0);
+    return fecha;
+  };
+
+  // Validación de campos vacíos
+  if (!Nombre || !Fechnat || !Fechingre || !Tlicencia || !Nlicencia || !DUI ||
+    !FECHVENLIC || !Tsangre || !EnfeCroc || !Estado || !FamEmerger || !NumEMer || !Establecimiento) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  // Validación de fechas
+  const hoy = crearFechaComparable(new Date());
+
+  const fechaNac = crearFechaComparable(Fechnat);
+  const edadMinima = new Date(fechaNac);
+  edadMinima.setFullYear(edadMinima.getFullYear() + 18);
+
+  if (edadMinima > hoy) {
+    Swal.fire({ icon: "error", title: "Error en fecha", text: "El motorista debe tener al menos 18 años." });
+    return;
+  }
+
+  const fechaIng = crearFechaComparable(Fechingre);
+  if (fechaIng < fechaNac) {
+    Swal.fire({ icon: "error", title: "Error en fechas", text: "La fecha de ingreso no puede ser anterior a la de nacimiento." });
+    return;
+  }
+
+  const fechaVenLic = crearFechaComparable(FECHVENLIC);
+  if (fechaVenLic < hoy) {
+    Swal.fire({ icon: "error", title: "Licencia vencida", text: "La licencia está vencida. Debe ser futura." });
+    return;
+  }
+
+  // Validación adicional: Fecha ingreso vs vencimiento licencia
+  if (fechaIng > fechaVenLic) {
+    Swal.fire({ icon: "error", title: "Error en fechas", text: "La fecha de ingreso no puede ser posterior al vencimiento de la licencia." });
+    return;
+  }
+
+  // Solo si pasa todas las validaciones, activar spinner
+  const btnGuardar = document.querySelector('#modalMotorista .btn-primary');
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+  // Crear objeto con los datos
+  const nuevoMotorista = {
+    Nombre, Fechnat, Fechingre, Tlicencia, Nlicencia,
+    DUI, FECHVENLIC, Tsangre, EnfeCroc, Estado,
+    FamEmerger, NumEMer, Establecimiento
+  };
+
+  console.time('guardarMotorista_total');
+  // Enviar a Google Sheets
+  google.script.run
+    .withSuccessHandler(() => {
+      console.timeEnd('guardarMotorista_total');
+      // Actualizar DataTable sin recargar
+      const tabla = $('#tablaMotoristas').DataTable();
+      tabla.row.add([
+        Nombre, Fechnat, Fechingre, Tlicencia, Nlicencia,
+        DUI, FECHVENLIC, Tsangre, EnfeCroc, Estado,
+        FamEmerger, NumEMer, Establecimiento
+      ]).draw(false);
+
+      // Cerrar y limpiar formulario
+      bootstrap.Modal.getInstance(document.getElementById('modalMotorista')).hide();
+      document.getElementById('modalMotorista').querySelectorAll('input, select').forEach(el => el.value = '');
+
+      // Notificación y reset
+      Swal.fire({ icon: "success", title: "¡Guardado!", text: "Motorista registrado correctamente.", timer: 2000 });
+      resetButton(btnGuardar);
+    })
+    .withFailureHandler(error => {
+      console.timeEnd('guardarMotorista_total');
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      resetButton(btnGuardar);
+    })
+    .guardarMotoristaEnHoja(nuevoMotorista);
+}
+
+// ==============================================
+// ACTUALIZAR MOTORISTA EXISTENTE
+// ==============================================
+function actualizarMotorista() {
+  // Obtener datos del formulario
+  const index = parseInt(document.getElementById('MotoristaRowIndexEdit').value);
+  const Nombre = document.getElementById('NombremoEdit').value.trim();
+  const Fechnat = document.getElementById('FechnatEdit').value.trim();
+  const Fechingre = document.getElementById('FechingreEdit').value.trim();
+  const Tlicencia = document.getElementById('TlicenciaEdit').value.trim();
+  const Nlicencia = document.getElementById('NlicenciaEdit').value.trim();
+  const DUI = document.getElementById('DUIEdit').value.trim();
+  const FECHVENLIC = document.getElementById('FECHVENLICEdit').value.trim();
+  const Tsangre = document.getElementById('TsangreEdit').value.trim();
+  const EnfeCroc = document.getElementById('EnfeCrocEdit').value.trim();
+  const Estado = document.getElementById('EstadoEditmo').value.trim();
+  const FamEmerger = document.getElementById('FamEmergerEdit').value.trim();
+  const NumEMer = document.getElementById('NumEMerEdit').value.trim();
+  const Establecimiento = $('#EstablecimientomoEditSelect').val();
+
+  // Función para normalizar fechas
+  const crearFechaComparable = (fechaStr) => {
+    const fecha = new Date(fechaStr);
+    fecha.setHours(0, 0, 0, 0);
+    return fecha;
+  };
+
+  // Validación de campos vacíos
+  if (!Nombre || !Fechnat || !Fechingre || !Tlicencia || !Nlicencia || !DUI ||
+    !FECHVENLIC || !Tsangre || !EnfeCroc || !Estado || !FamEmerger || !NumEMer || !Establecimiento) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  // Validaciones de fecha
+  const hoy = crearFechaComparable(new Date());
+
+  const fechaNac = crearFechaComparable(Fechnat);
+  const edadMinima = new Date(fechaNac);
+  edadMinima.setFullYear(edadMinima.getFullYear() + 18);
+
+  if (edadMinima > hoy) {
+    Swal.fire({ icon: "error", title: "Error en fecha", text: "El motorista debe tener al menos 18 años." });
+    return;
+  }
+
+  const fechaIng = crearFechaComparable(Fechingre);
+  if (fechaIng < fechaNac) {
+    Swal.fire({ icon: "error", title: "Error en fechas", text: "La fecha de ingreso no puede ser anterior a la de nacimiento." });
+    return;
+  }
+
+  const fechaVenLic = crearFechaComparable(FECHVENLIC);
+  if (fechaVenLic < hoy) {
+    Swal.fire({ icon: "error", title: "Licencia vencida", text: "La licencia está vencida. Debe ser futura." });
+    return;
+  }
+
+  // Validación adicional: Fecha ingreso vs vencimiento licencia
+  if (fechaIng > fechaVenLic) {
+    Swal.fire({ icon: "error", title: "Error en fechas", text: "La fecha de ingreso no puede ser posterior al vencimiento de la licencia." });
+    return;
+  }
+
+  // Solo si pasa todas las validaciones, activar spinner
+  const btnActualizar = document.querySelector('#modalEditarMotorista .btn-primary');
+  btnActualizar.disabled = true;
+  btnActualizar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+  // Crear objeto actualizado
+  const motoristaActualizado = {
+    Nombre, Fechnat, Fechingre, Tlicencia, Nlicencia,
+    DUI, FECHVENLIC, Tsangre, EnfeCroc, Estado,
+    FamEmerger, NumEMer, Establecimiento
+  };
+
+  // Enviar actualización
+  google.script.run
+    .withSuccessHandler(() => {
+      // Actualizar fila en DataTable
+      const tabla = $('#tablaMotoristas').DataTable();
+      const estadoBadge = Estado == 1
+        ? '<span class="badge bg-success">Activo</span>'
+        : '<span class="badge bg-danger">Inactivo</span>';
+      tabla.row(index).data([
+        Nombre, Fechnat, Fechingre, Tlicencia, Nlicencia,
+        DUI, FECHVENLIC, Tsangre, EnfeCroc, estadoBadge,
+        FamEmerger, NumEMer, Establecimiento
+      ]).draw(false);
+
+      // Cerrar modal
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarMotorista')).hide();
+
+      // Notificación
+      Swal.fire({ icon: "success", title: "¡Actualizado!", text: "Datos modificados correctamente.", timer: 2000 });
+      resetButton(btnActualizar);
+    })
+    .withFailureHandler(error => {
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      resetButton(btnActualizar);
+    })
+    .actualizarMotoristaEnHoja(motoristaActualizado, index + 2);
+}
+
+// ==============================================
+// FUNCIONES AUXILIARES
+// ==============================================
+function resetButton(button) {
+  button.disabled = false;
+  button.innerHTML = button.closest('#modalEditarMotorista') ? 'Actualizar' : 'Guardar';
+}
+
+// Listar motoristas
+function listarMotoristas() {
+  if ($.fn.DataTable.isDataTable('#tablaMotoristas')) {
+    $('#tablaMotoristas').DataTable().destroy();
+  }
+
+  google.script.run.withSuccessHandler(function (motoristas) {
+    motoristas = JSON.parse(motoristas);
+    let html = '';
+
+    // Recorremos TODOS los motoristas 
+    motoristas.forEach(motorista => {
+      // Creamos el badge según el estado
+      const estadoBadge = motorista.Estado == 1
+        ? '<span class="badge bg-success">Activo</span>'
+        : '<span class="badge bg-danger">Inactivo</span>';
+
+      html += `
+      <tr>
+        <td>${motorista.Nombre}</td>
+        <td>${motorista.Fechnat}</td>
+        <td>${motorista.Fechingre}</td>
+        <td>${motorista.Tlicencia}</td>
+        <td>${motorista.Nlicencia}</td>
+        <td>${motorista.DUI}</td>
+        <td>${motorista.FECHVENLIC}</td>
+        <td>${motorista.Tsangre}</td>
+        <td>${motorista.EnfeCroc || 'Ninguna'}</td>
+        <td>${estadoBadge}</td> <!-- Estado con estilo -->
+        <td>${motorista.FamEmerger}</td>
+        <td>${motorista.NumEMer}</td>
+        <td>${motorista.Establecimiento}</td>
+      </tr>`;
+    });
+
+    document.getElementById('cuerpoMotoristas').innerHTML = html;
+
+    $('#tablaMotoristas').DataTable({
+      language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" },
+      columnDefs: [{ targets: [1, 2, 5, 7, 8, 10, 12], visible: false }],
+      initComplete: configurarClicFilaMotoristas
+    });
+  }).obtenerMotoristasJSON();
+}
+
+// Configurar clic en filas
+function configurarClicFilaMotoristas() {
+  const tabla = $('#tablaMotoristas').DataTable();
+  $('#tablaMotoristas tbody').on('click', 'tr', function () {
+    const datos = tabla.row(this).data();
+    if (!datos) return;
+
+    document.getElementById('MotoristaRowIndexEdit').value = tabla.row(this).index();
+
+    const formatDate = (dateStr) => {
+      return dateStr || '';
+    };
+
+    // Llenar formulario de edición
+    document.getElementById('NombremoEdit').value = datos[0];
+    document.getElementById('FechnatEdit').value = formatDate(datos[1]);
+    document.getElementById('FechingreEdit').value = formatDate(datos[2]);
+    document.getElementById('TlicenciaEdit').value = datos[3];
+    document.getElementById('NlicenciaEdit').value = datos[4];
+    document.getElementById('DUIEdit').value = datos[5];
+    document.getElementById('FECHVENLICEdit').value = formatDate(datos[6]);
+    document.getElementById('TsangreEdit').value = datos[7];
+    document.getElementById('EnfeCrocEdit').value = datos[8];
+    const estadoActual = $(datos[9]).text().trim() === 'Activo' ? '1' : '0';
+    document.getElementById('EstadoEditmo').value = estadoActual;
+    document.getElementById('FamEmergerEdit').value = datos[10];
+    document.getElementById('NumEMerEdit').value = datos[11];
+    $('#EstablecimientomoEditSelect').val(datos[12]).trigger('change');
+
+    // Mostrar modal
+    new bootstrap.Modal(document.getElementById('modalEditarMotorista')).show();
+  });
+}
+
+        
+// SELECT2 PARA AUTOMÓVILES 
+/////////////////////////////////////////////////////////////////////////////////////
+function inicializarSelect2EstablecimientosAuto() {
+  google.script.run.withSuccessHandler(function(data) {
+    const establecimientos = JSON.parse(data);
+    
+    // Modal NUEVO automóvil
+    const $selectNuevo = $('#Establecimientoauto');
+    $selectNuevo.empty().append('<option></option>');
+    establecimientos.forEach(est => {
+      $selectNuevo.append(new Option(est, est));
+    });
+    
+    // Modal EDITAR automóvil (conserva el valor actual)
+    const $selectEdit = $('#EstablecimientoautoEditSelect');
+    const valorActual = $selectEdit.val();
+    $selectEdit.empty().append('<option></option>');
+    establecimientos.forEach(est => {
+      $selectEdit.append(new Option(est, est));
+    });
+    if (valorActual) $selectEdit.val(valorActual).trigger('change');
+    
+    // Inicializar Select2
+    $('.select2-establecimiento-auto').select2({
+      placeholder: "Seleccione un establecimiento",
+      width: '100%',
+      dropdownParent: $('#modalAutomovil, #modalEditarAutomovil')
+    });
+  }).obtenerEstablecimientos();
+}
+
+// Eventos para automóviles
+$(document).ready(function() {
+  // Inicializar al cargar la página
+  inicializarSelect2EstablecimientosAuto();
+  
+  // Reinicializar solo el select2 del modal al abrirlo
+  $('#modalAutomovil, #modalEditarAutomovil').on('shown.bs.modal', function() {
+    const $select = $(this).find('.select2-establecimiento-auto');
+    if ($select.hasClass('select2-hidden-accessible')) {
+      $select.select2('destroy');
+    }
+    $select.select2({
+      placeholder: "Seleccione un establecimiento",
+      width: '100%',
+      dropdownParent: $(this)
+    });
+  });
+});
+
+        
+// FUNCIONES DE AUTOMÓVILES
+// ==============================================
+// GUARDAR NUEVO AUTOMÓVIL
+// ==============================================
+function guardarAutomovil() {
+  // Obtener todos los valores del formulario
+  const Placa = document.getElementById('Placa').value.trim();
+  const tipovehiculo = document.getElementById('tipovehiculo').value.trim();
+  const tipogasolina = document.getElementById('tipogasolina').value.trim();
+  const Estado = document.getElementById('Estadoauto').value.trim();
+  const Comentario = document.getElementById('Comentarioauto').value.trim();
+  const aniovehiculo = document.getElementById('aniovehiculo').value.trim();
+  const Establecimiento = $('#Establecimientoauto').val();
+  const marca = document.getElementById('marca').value.trim();
+  const Modelo = document.getElementById('Modelo').value.trim();
+  const ult_fechmantenimiento = document.getElementById('ult_fechmantenimiento').value.trim();
+  const costmante = document.getElementById('costmante').value.trim();
+
+  // Validación de campos vacíos
+  if (!Placa || !tipovehiculo || !tipogasolina || !Estado || !aniovehiculo || !Establecimiento || !marca || !Modelo || !ult_fechmantenimiento || !costmante) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  // Validación de año
+  const añoActual = new Date().getFullYear();
+  if (aniovehiculo < 1900 || aniovehiculo > añoActual) {
+    Swal.fire({ icon: "error", title: "Año inválido", text: "El año del vehículo debe estar entre 1900 y " + añoActual });
+    return;
+  }
+
+  // Validación de fecha de mantenimiento
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const fechaMantenimiento = new Date(ult_fechmantenimiento);
+  if (fechaMantenimiento > hoy) {
+    Swal.fire({ icon: "error", title: "Fecha inválida", text: "La fecha de mantenimiento no puede ser futura." });
+    return;
+  }
+
+  // Validación de costo
+  if (costmante < 0) {
+    Swal.fire({ icon: "error", title: "Costo inválido", text: "El costo de mantenimiento no puede ser negativo." });
+    return;
+  }
+
+  // Solo si pasa todas las validaciones, activar spinner
+  const btnGuardar = document.querySelector('#modalAutomovil .btn-primary');
+  btnGuardar.disabled = true;
+  btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+  // Crear objeto con los datos
+  const nuevoAutomovil = {
+    Placa, tipovehiculo, tipogasolina, Estado, Comentario, aniovehiculo, Establecimiento, marca, Modelo, ult_fechmantenimiento, costmante
+  };
+
+  // Enviar a Google Sheets
+  google.script.run
+    .withSuccessHandler(() => {
+      // Actualizar DataTable sin recargar
+      const tabla = $('#tablaAutomoviles').DataTable();
+      tabla.row.add([
+        Placa, tipovehiculo, tipogasolina, Estado, Comentario, aniovehiculo, Establecimiento, marca, Modelo, ult_fechmantenimiento, costmante
+      ]).draw(false);
+
+      // Cerrar y limpiar formulario
+      bootstrap.Modal.getInstance(document.getElementById('modalAutomovil')).hide();
+      document.getElementById('modalAutomovil').querySelectorAll('input, select').forEach(el => el.value = '');
+
+      // Notificación y reset
+      Swal.fire({ icon: "success", title: "¡Guardado!", text: "Automóvil registrado correctamente.", timer: 2000 });
+      resetButtonAuto(btnGuardar);
+    })
+    .withFailureHandler(error => {
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      resetButtonAuto(btnGuardar);
+    })
+    .guardarAutomovilEnHoja(nuevoAutomovil);
+}
+
+// ==============================================
+// ACTUALIZAR AUTOMÓVIL EXISTENTE
+// ==============================================
+function actualizarAutomovil() {
+  // Obtener datos del formulario
+  const index = parseInt(document.getElementById('AutomovilRowIndexEdit').value);
+  const Placa = document.getElementById('PlacaEdit').value.trim();
+  const tipovehiculo = document.getElementById('tipovehiculoEdit').value.trim();
+  const tipogasolina = document.getElementById('tipogasolinaEdit').value.trim();
+  const Estado = document.getElementById('EstadoautoEdit').value.trim();
+  const Comentario = document.getElementById('ComentarioautoEdit').value.trim();
+  const aniovehiculo = document.getElementById('aniovehiculoEdit').value.trim();
+  const Establecimiento = $('#EstablecimientoautoEditSelect').val();
+  const marca = document.getElementById('marcaEdit').value.trim();
+  const Modelo = document.getElementById('ModeloEdit').value.trim();
+  const ult_fechmantenimiento = document.getElementById('ult_fechmantenimientoEdit').value.trim();
+  const costmante = document.getElementById('costmanteEdit').value.trim();
+
+  // Validación de campos vacíos
+  if (!Placa || !tipovehiculo || !tipogasolina || !Estado || !aniovehiculo || !Establecimiento || !marca || !Modelo || !ult_fechmantenimiento || !costmante) {
+    Swal.fire({ icon: "warning", title: "Campos incompletos", text: "Complete todos los campos requeridos." });
+    return;
+  }
+
+  // Validación de año
+  const añoActual = new Date().getFullYear();
+  if (aniovehiculo < 1900 || aniovehiculo > añoActual) {
+    Swal.fire({ icon: "error", title: "Año inválido", text: "El año del vehículo debe estar entre 1900 y " + añoActual });
+    return;
+  }
+
+  // Validación de fecha de mantenimiento
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const fechaMantenimiento = new Date(ult_fechmantenimiento);
+  if (fechaMantenimiento > hoy) {
+    Swal.fire({ icon: "error", title: "Fecha inválida", text: "La fecha de mantenimiento no puede ser futura." });
+    return;
+  }
+
+  // Validación de costo
+  if (costmante < 0) {
+    Swal.fire({ icon: "error", title: "Costo inválido", text: "El costo de mantenimiento no puede ser negativo." });
+    return;
+  }
+
+  // Solo si pasa todas las validaciones, activar spinner
+  const btnActualizar = document.querySelector('#modalEditarAutomovil .btn-primary');
+  btnActualizar.disabled = true;
+  btnActualizar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+  // Crear objeto actualizado
+  const automovilActualizado = {
+    Placa, tipovehiculo, tipogasolina, Estado, Comentario, aniovehiculo, Establecimiento, marca, Modelo, ult_fechmantenimiento, costmante
+  };
+
+  // Enviar actualización
+  google.script.run
+    .withSuccessHandler(() => {
+      // Actualizar fila en DataTable
+      const tabla = $('#tablaAutomoviles').DataTable();
+      const estadoBadge = Estado == 1
+        ? '<span class="badge bg-success">Activo</span>'
+        : '<span class="badge bg-danger">Inactivo</span>';
+      tabla.row(index).data([
+        Placa, tipovehiculo, tipogasolina, estadoBadge, Comentario, aniovehiculo, Establecimiento, marca, Modelo, ult_fechmantenimiento, costmante
+      ]).draw(false);
+
+      // Cerrar modal
+      bootstrap.Modal.getInstance(document.getElementById('modalEditarAutomovil')).hide();
+
+      // Notificación
+      Swal.fire({ icon: "success", title: "¡Actualizado!", text: "Datos modificados correctamente.", timer: 2000 });
+      resetButtonAuto(btnActualizar);
+    })
+    .withFailureHandler(error => {
+      Swal.fire({ icon: "error", title: "Error", text: error.message });
+      resetButtonAuto(btnActualizar);
+    })
+    .actualizarAutomovilEnHoja(automovilActualizado, index + 2);
+}
+
+// ==============================================
+// FUNCIONES AUXILIARES AUTOMÓVILES
+// ==============================================
+function resetButtonAuto(button) {
+  button.disabled = false;
+  button.innerHTML = button.closest('#modalEditarAutomovil') ? 'Actualizar' : 'Guardar';
+}
+
+
+// Configurar clic en filas para automóviles
+function configurarClicFilaAutomoviles() {
+  const tabla = $('#tablaAutomoviles').DataTable();
+  $('#tablaAutomoviles tbody').on('click', 'tr', function () {
+    const datos = tabla.row(this).data();
+    if (!datos) return;
+
+    document.getElementById('AutomovilRowIndexEdit').value = tabla.row(this).index();
+
+    const formatDate = (dateStr) => {
+      return dateStr || '';
+    };
+
+    // Llenar formulario de edición
+    document.getElementById('PlacaEdit').value = datos[0];
+    document.getElementById('tipovehiculoEdit').value = datos[1];
+    document.getElementById('tipogasolinaEdit').value = datos[2];
+    const estadoActual = $(datos[3]).text().trim() === 'Activo' ? '1' : '0';
+    document.getElementById('EstadoautoEdit').value = estadoActual;
+    document.getElementById('ComentarioautoEdit').value = datos[4];
+    document.getElementById('aniovehiculoEdit').value = datos[5];
+    $('#EstablecimientoautoEditSelect').val(datos[6]).trigger('change');
+    document.getElementById('marcaEdit').value = datos[7];
+    document.getElementById('ModeloEdit').value = datos[8];
+    document.getElementById('ult_fechmantenimientoEdit').value = formatDate(datos[9]);
+    document.getElementById('costmanteEdit').value = datos[10];
+
+    // Mostrar modal
+    new bootstrap.Modal(document.getElementById('modalEditarAutomovil')).show();
+  });
+}
+
+
+// Listar automóviles - VERSIÓN CORREGIDA
+function listarAutomoviles() {
+  // Destruir instancia existente de DataTables si existe
+  if ($.fn.DataTable.isDataTable('#tablaAutomoviles')) {
+    $('#tablaAutomoviles').DataTable().destroy();
+    $('#tablaAutomoviles').empty(); // Limpiar la tabla completamente
+  }
+
+  google.script.run.withSuccessHandler(function (automovilesJSON) {
+    try {
+      const automoviles = JSON.parse(automovilesJSON);
+      let html = '';
+
+      automoviles.forEach(automovil => {
+        const estadoBadge = automovil.Estado == 1
+          ? '<span class="badge bg-success">Activo</span>'
+          : '<span class="badge bg-danger">Inactivo</span>';
+
+        html += `
+        <tr>
+          <td>${automovil.Placa || ''}</td>
+          <td>${automovil.tipovehiculo || ''}</td>
+          <td>${automovil.tipogasolina || ''}</td>
+          <td>${estadoBadge}</td>
+          <td>${automovil.Comentario || 'Ninguno'}</td>
+          <td>${automovil.aniovehiculo || ''}</td>
+          <td>${automovil.Establecimiento || ''}</td>
+          <td>${automovil.marca || ''}</td>
+          <td>${automovil.Modelo || ''}</td>
+          <td>${automovil.ult_fechmantenimiento || ''}</td>
+          <td>${automovil.costmante || ''}</td>
+        </tr>`;
+      });
+
+      document.getElementById('cuerpoAutomoviles').innerHTML = html;
+
+      // Inicializar DataTable con las columnas correctas
+$('#tablaAutomoviles').DataTable({
+  language: {
+    decimal: ",",
+    thousands: ".",
+    lengthMenu: "Mostrar _MENU_ registros",
+    zeroRecords: "No se encontraron resultados",
+    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+    infoEmpty: "Mostrando 0 a 0 de 0 registros",
+    infoFiltered: "(filtrado de _MAX_ registros totales)",
+    search: "Buscar:",
+    loadingRecords: "Cargando...",
+    processing: "Procesando...",
+    paginate: {
+      first: "Primero",
+      last: "Último",
+      next: "Siguiente",
+      previous: "Anterior"
+    }
+  },
+  columnDefs: [{
+    targets: [4, 5, 6, 7, 8, 9, 10],
+    visible: false
+  }],
+  initComplete: function() {
+    configurarClicFilaAutomoviles();
+  }
+});
+
+
+
+    } catch (error) {
+      console.error('Error al procesar automóviles:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudieron cargar los datos de automóviles'
+      });
+    }
+  }).obtenerAutomovilesJSON();
+}
+// FUNCIONES DE SOLICITUDES
+
+
+
+
+function escapeHTML(text) {
+  if (!text) return '';
+  return text.toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// Tabla de Solicitudes enviadas o Nuevas solicitudes Para todos los usuarios
+
+function listarSolicitudesE() {
+  if ($.fn.DataTable.isDataTable('#tablaSoli')) {
+    $('#tablaSoli').DataTable().destroy();
+    document.getElementById('cuerpoSoli').innerHTML = '';
+  }
+
+  google.script.run.withSuccessHandler(function (respuestaJSON) {
+    let solicitudes = [];
+
+    try {
+      solicitudes = JSON.parse(respuestaJSON); // Convertir a array
+    } catch (e) {
+      console.error("Error al parsear JSON:", e, respuestaJSON);
+      return;
+    }
+
+    // 🔹 Filtrar solo solicitudes del usuario logueado
+    if (usuarioLogueado && usuarioLogueado.User) {
+      solicitudes = solicitudes.filter(s => s.User === usuarioLogueado.User);
+    }
+
+    let html = '';
+    solicitudes.forEach(solicitud => {
+      html += `
+        <tr>
+          <td>${escapeHTML(solicitud.User)}</td>
+          <td>${escapeHTML(solicitud.Fecsol)}</td>
+          <td>${escapeHTML(solicitud.Fecsal)}</td>
+          <td>${escapeHTML(solicitud.HoraSal)}</td>
+          <td>${escapeHTML(solicitud.HoraRegre)}</td>
+          <td>${escapeHTML(solicitud.RRHH)}</td>
+          <td>${escapeHTML(solicitud.Motivo)}</td>
+          <td>${escapeHTML(solicitud.lugares)}</td>
+          <td>${escapeHTML(solicitud.Estado)}</td>
+          <td>${escapeHTML(solicitud.placa)}</td>
+          <td>${escapeHTML(solicitud.motorista)}</td>
+          <td>${escapeHTML(solicitud.Tgas)}</td>
+          <td>${escapeHTML(solicitud.justsoli)}</td>
+          <td>${escapeHTML(solicitud.newlugar)}</td>
+          <td>${escapeHTML(solicitud.justcambio)}</td>
+          <td>${escapeHTML(solicitud.Idsolicitud)}</td>
+          <td>${escapeHTML(solicitud.UnSolicitante)}</td>
+          <td>${escapeHTML(solicitud.OrdSuministro)}</td>
+          <td>${escapeHTML(solicitud.Ncupones)}</td>
+          <td>${escapeHTML(solicitud.SerieIni)}</td>
+          <td>${escapeHTML(solicitud.SerieFin)}</td>
+          <td>${escapeHTML(solicitud.CantAsing)}</td>
+          <td>${escapeHTML(solicitud.Authorizado)}</td>
+          <td>${escapeHTML(solicitud.Recibido)}</td>
+          <td>${escapeHTML(solicitud.marca)}</td>
+        </tr>`;
+    });
+
+    document.getElementById('cuerpoSoli').innerHTML = html;
+
+    $('#tablaSoli').DataTable({
+      columnDefs: [
+        { targets: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24], visible: false }
+      ],
+      responsive: true,
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+  }).obtenerSolicitudesJSON();
+}
+
+
+function configurarClicFilaSolicitudesN() {
+  const tabla = $('#tablaSoliN').DataTable();
+
+  $('#tablaSoliN tbody').on('click', 'tr', function () {
+    const datos = tabla.row(this).data();
+    if (!datos) return;
+
+    // Índice de la fila seleccionada
+    document.getElementById('SoliRowIndexEdit').value = tabla.row(this).index();
+
+     const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      
+      // Si es un objeto Date (puede venir así de Google Apps Script)
+      if (dateStr instanceof Date) {
+        return dateStr.toISOString().split('T')[0];
+      }
+      
+      // Si es string con formato dd/mm/yyyy
+      if (typeof dateStr === 'string' && dateStr.includes('/')) {
+        const [day, month, year] = dateStr.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+      }
+      
+      return dateStr; // Si ya está en formato YYYY-MM-DD
+      
+    };
+
+    // Asignación de campos según el orden de columnas document.getElementById('FechnatEdit').value = formatDate(datos[1]);
+    document.getElementById('UserSoli').value = datos[0];
+    document.getElementById('FecsolN').value = formatDate(datos[1]);
+    document.getElementById('Fecsal').value = formatDate(datos[2]);
+    document.getElementById('HoraSal').value = datos[3];
+    document.getElementById('HoraRegre').value = datos[4];
+    document.getElementById('RRHH').value = datos[5];
+    document.getElementById('Motivo').value = datos[6];
+    document.getElementById('lugares').value = datos[7];
+    document.getElementById('EstadoS').value = datos[8];
+    document.getElementById('placa').value = datos[9];
+    document.getElementById('motorista').value = datos[10];
+    document.getElementById('Tgas').value = datos[11];
+    document.getElementById('justsoli').value = datos[12];
+    document.getElementById('NewLugar').value = datos[13];
+    document.getElementById('JustCambio').value = datos[14];
+    document.getElementById('IdSolicitud').value = datos[15];
+    document.getElementById('UnSolicitante').value = datos[16];
+    document.getElementById('OrdSuministro').value = datos[17];
+    document.getElementById('Ncupones').value = datos[18];
+    document.getElementById('SerieIni').value = datos[19];
+    document.getElementById('SerieFin').value = datos[20];
+    document.getElementById('CantAsing').value = datos[21];
+    document.getElementById('Authorizado').value = datos[22];
+    document.getElementById('Recibido').value = datos[23];
+    document.getElementById('Marca').value = datos[24];
+    document.getElementById("Fecsol").style.display = "none";
+    document.getElementById("FecsolTXT").style.display = "none";
+    document.getElementById("btnGuardar").style.display = "none";
+    document.getElementById("UserSoli").style.display = "block";
+    document.getElementById("FecsolTXT").style.display = "block"
+    document.getElementById("Fecsol").style.display = "block";
+    document.getElementById("FecsolT2").style.display = "block";
+    document.getElementById("FecsolN").style.display = "block";
+    document.getElementById("Fecsal").style.display = "block";
+    document.getElementById("HoraSal").style.display = "block";
+    document.getElementById("HoraRegre").style.display = "block";
+    document.getElementById("RRHH").style.display = "block";
+    document.getElementById("Motivo").style.display = "block";
+    document.getElementById("lugares").style.display = "block";
+    document.getElementById("lEstado").style.display = "block";
+    document.getElementById("EstadoS").style.display = "block";
+    document.getElementById("lplaca").style.display = "block";
+    document.getElementById("placa").style.display = "block";
+    document.getElementById("lmotorista").style.display = "block";
+    document.getElementById("motorista").style.display = "block";  
+    document.getElementById("lTgas").style.display = "block";   
+    document.getElementById("Tgas").style.display = "block";
+    document.getElementById("ljustsoli").style.display = "block";     
+    document.getElementById("justsoli").style.display = "block"; 
+    document.getElementById("lNewLugar").style.display = "block";   
+    document.getElementById("NewLugar").style.display = "block";   
+    document.getElementById("lJustCambio").style.display = "block";  
+    document.getElementById("JustCambio").style.display = "block"; 
+    document.getElementById("lIdSolicitud").style.display = "block";    
+    document.getElementById("IdSolicitud").style.display = "block";    
+    document.getElementById("lUnSolicitante").style.display = "block"; 
+    document.getElementById("UnSolicitante").style.display = "block";     
+    document.getElementById("lOrdSuministro").style.display = "block";
+    document.getElementById("OrdSuministro").style.display = "block";     
+    document.getElementById("lNcupones").style.display = "block"; 
+    document.getElementById("Ncupones").style.display = "block";      
+    document.getElementById("lSerieIni").style.display = "block";
+    document.getElementById("SerieIni").style.display = "block";     
+    document.getElementById("lSerieFin").style.display = "block";
+    document.getElementById("SerieFin").style.display = "block";     
+    document.getElementById("lCantAsing").style.display = "block"; 
+    document.getElementById("CantAsing").style.display = "block";     
+    document.getElementById("lAuthorizado").style.display = "block";
+    document.getElementById("Authorizado").style.display = "block";     
+    document.getElementById("lRecibido").style.display = "block";
+    document.getElementById("Recibido").style.display = "block";     
+    document.getElementById("lMarca").style.display = "block";
+    document.getElementById("Marca").style.display = "block";
+    document.getElementById("btnCancelar").style.display = "block";
+    document.getElementById("btnActualizar").style.display = "block";
+    document.getElementById("btnGuardar").style.display = "none";
+    inicializarSelect2MotoristasUser();
+    
+
+    // Mostrar el modal
+    new bootstrap.Modal(document.getElementById('modalNuevo')).show();
+  });
+}
+
+
+
+// Datos que se mostraran en la TABLA DE SOLICITUDES-NUEVAS
+function listarSolicitudesN() {
+  if ($.fn.DataTable.isDataTable('#tablaSoliN')) {
+    $('#tablaSoliN').DataTable().destroy();
+    document.getElementById('cuerpoSoliN').innerHTML = '';
+  }
+
+  google.script.run.withSuccessHandler(function (respuestaJSON) {
+    let solicitudes = [];
+
+    try {
+      solicitudes = JSON.parse(respuestaJSON); // Convertir a array
+    } catch (e) {
+      console.error("Error al parsear JSON:", e, respuestaJSON);
+      return;
+    }
+
+    let html = '';
+    solicitudes.forEach(solicitud => {
+
+     if (solicitud.Estado === ""){
+      html += `
+      
+        <tr>
+          <td>${escapeHTML(solicitud.User)}</td>
+          <td>${escapeHTML(solicitud.Fecsol)}</td>
+          <td>${escapeHTML(solicitud.Fecsal)}</td>
+          <td>${escapeHTML(solicitud.HoraSal)}</td>
+          <td>${escapeHTML(solicitud.HoraRegre)}</td>
+          <td>${escapeHTML(solicitud.RRHH)}</td>
+          <td>${escapeHTML(solicitud.Motivo)}</td>
+          <td>${escapeHTML(solicitud.lugares)}</td>
+          <td>${escapeHTML(solicitud.Estado)}</td>
+          <td>${escapeHTML(solicitud.placa)}</td>
+          <td>${escapeHTML(solicitud.motorista)}</td>
+          <td>${escapeHTML(solicitud.Tgas)}</td>
+          <td>${escapeHTML(solicitud.justsoli)}</td>
+          <td>${escapeHTML(solicitud.newlugar)}</td>
+          <td>${escapeHTML(solicitud.justcambio)}</td>
+          <td>${escapeHTML(solicitud.Idsolicitud)}</td>
+          <td>${escapeHTML(solicitud.UnSolicitante)}</td>
+          <td>${escapeHTML(solicitud.OrdSuministro)}</td>
+          <td>${escapeHTML(solicitud.Ncupones)}</td>
+          <td>${escapeHTML(solicitud.SerieIni)}</td>
+          <td>${escapeHTML(solicitud.SerieFin)}</td>
+          <td>${escapeHTML(solicitud.CantAsing)}</td>
+          <td>${escapeHTML(solicitud.Authorizado)}</td>
+          <td>${escapeHTML(solicitud.Recibido)}</td>
+          <td>${escapeHTML(solicitud.marca)}</td>
+        </tr>`;
+        }
+    });
+
+    document.getElementById('cuerpoSoliN').innerHTML = html;
+
+    // Inicializar DataTable
+    $('#tablaSoliN').DataTable({
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+
+    // Hacer las filas clickeables para abrir el modal con los datos
+    configurarClicFilaSolicitudesN();
+
+  }).obtenerSolicitudesJSON();
+}
+
+// FUNCION PARA MOSTRAR DATOS EN TABLA PROCESADA
+function listarSolicitudesP() {
+  if ($.fn.DataTable.isDataTable('#tablaSoliP')) {
+    $('#tablaSoliP').DataTable().destroy();
+    document.getElementById('cuerpoSoliP').innerHTML = '';
+  }
+
+  google.script.run.withSuccessHandler(function (respuestaJSON) {
+    let solicitudes = [];
+
+    try {
+      solicitudes = JSON.parse(respuestaJSON); // Convertir a array
+    } catch (e) {
+      console.error("Error al parsear JSON:", e, respuestaJSON);
+      return;
+    }
+
+    // 🔹 Filtrar por usuario logueado: si es OPERADOR ver solo sus solicitudes
+    if (usuarioLogueado && usuarioLogueado.TUser) {
+      // Normalizar a minúsculas para evitar problemas de mayúsculas/minúsculas
+      if (String(usuarioLogueado.TUser).toLowerCase() === "operador") {
+        solicitudes = solicitudes.filter(s => s.User === usuarioLogueado.User);
+      }
+      // Si es administrador u otro rol, no se aplica el filtro (verá todas)
+    }
+
+    // 🔹 Mapeo de estados
+    const estadosMap = {
+      "1": "Aceptada",
+      "2": "Denegada",
+      "3": "Cancelada",
+      "0": "Pendiente"
+    };
+
+    let html = '';
+    solicitudes.forEach(solicitud => {
+      // 🔹 Filtrar también por Estado válido
+      if (["0", "1", "2", "3"].includes(String(solicitud.Estado))) {
+        const estadoTexto = estadosMap[String(solicitud.Estado)] || "Desconocido";
+
+        html += `
+          <tr>
+            <td>${escapeHTML(solicitud.User)}</td>
+            <td>${escapeHTML(solicitud.Fecsol)}</td>
+            <td>${escapeHTML(solicitud.Fecsal)}</td>
+            <td>${escapeHTML(solicitud.HoraSal)}</td>
+            <td>${escapeHTML(solicitud.HoraRegre)}</td>
+            <td>${escapeHTML(solicitud.RRHH)}</td>
+            <td>${escapeHTML(solicitud.Motivo)}</td>
+            <td>${escapeHTML(solicitud.lugares)}</td>
+            <td>${estadoTexto}</td>
+            <td>${escapeHTML(solicitud.placa)}</td>
+            <td>${escapeHTML(solicitud.motorista)}</td>
+            <td>${escapeHTML(solicitud.Tgas)}</td>
+            <td>${escapeHTML(solicitud.justsoli)}</td>
+            <td>${escapeHTML(solicitud.newlugar)}</td>
+            <td>${escapeHTML(solicitud.justcambio)}</td>
+            <td>${escapeHTML(solicitud.Idsolicitud)}</td>
+            <td>${escapeHTML(solicitud.UnSolicitante)}</td>
+            <td>${escapeHTML(solicitud.OrdSuministro)}</td>
+            <td>${escapeHTML(solicitud.Ncupones)}</td>
+            <td>${escapeHTML(solicitud.SerieIni)}</td>
+            <td>${escapeHTML(solicitud.SerieFin)}</td>
+            <td>${escapeHTML(solicitud.CantAsing)}</td>
+            <td>${escapeHTML(solicitud.Authorizado)}</td>
+            <td>${escapeHTML(solicitud.Recibido)}</td>
+            <td>${escapeHTML(solicitud.marca)}</td>
+          </tr>`;
+      }
+    });
+
+    document.getElementById('cuerpoSoliP').innerHTML = html;
+
+    $('#tablaSoliP').DataTable({
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+  }).obtenerSolicitudesJSON();
+}
+
+
+
+
+function validarHorario(horaStr) {
+  // Convierte "HH:MM" a número de horas (24h)
+  const [horas, minutos] = horaStr.split(":").map(Number);
+  const totalHoras = horas + (minutos / 60);
+
+  // Rango permitido: 7:00 (7) a 17:00 (17)
+  return totalHoras >= 7 && totalHoras <= 17;
+}
+
+function guardarSoli()
+{
+
+  const horaSalida = document.getElementById("HoraSal").value;
+  const horaRegreso = document.getElementById("HoraRegre").value;
+  const fechaSolicitud = document.getElementById('Fecsol').value.trim();
+  const fechaSalida = document.getElementById('Fecsal').value.trim();
+
+  //  Validar horarios
+  if (!validarHorario(horaSalida) || !validarHorario(horaRegreso)) {
+    Swal.fire({
+      icon: "error",
+      title: "Horario inválido",
+      text: "Solo se permiten horarios entre 7:00 AM y 5:00 PM",
+    });
+    return;
+  }
+
+    if (fechaSolicitud === fechaSalida) {
+    Swal.fire({
+      icon: "error",
+      title: "Fechas inválidas",
+      text: "La fecha de salida no puede ser el mismo día que la fecha de solicitud.",
+    });
+    return;
+  }
+
+  const solicitud=
+  {
+    User: document.getElementById('UserSoli').value.trim(),
+    Fecsol: document.getElementById('Fecsol').value.trim(),
+    Fecsal: document.getElementById('Fecsal').value.trim(),
+    HoraSal: document.getElementById('HoraSal').value.trim(),
+    HoraRegre: document.getElementById('HoraRegre').value.trim(),
+    RRHH: document.getElementById('RRHH').value.trim(),
+    Motivo: document.getElementById('Motivo').value.trim(),
+    lugares: document.getElementById('lugares').value.trim(),
+    Idsolicitud: document.getElementById('IdSolicitud').value.trim()
+    
+  };
+    if (solicitud.User === "" || solicitud.FecSol === "" || solicitud.FecSal === "" || solicitud.HoraSal === "" || solicitud.HoraRegre === ""
+        || solicitud.RRHH === "" || solicitud.Motivo === "" || solicitud.lugares === ""
+    ) {
+    Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      text: "Por favor, complete los campos obligatorios.",
+    });
+    return;
+  }
+
+    google.script.run
+    .withSuccessHandler(() => {
+      
+      listarSolicitudesE();
+      listarSolicitudesN();
+      bootstrap.Modal.getInstance(document.getElementById('modalNuevo')).hide();
+      Swal.fire("Solicitud guardada", "Se registró correctamente", "success");
+      document.querySelectorAll('#modalNuevo input, #modalNuevo select').forEach(e => e.value = '');
+    })
+    .withFailureHandler(error => alert('Error al guardar la Solicitud: ' + error.message))
+    .guardarSolicitudesEnHoja(solicitud);
+}
+
+function actualizarSoliN() {
+  const index = document.getElementById('SoliRowIndexEdit').value;
+  const User = document.getElementById('UserSoli').value.trim();
+  const Fecsol = document.getElementById('FecsolN').value.trim();
+  const Fecsal = document.getElementById('Fecsal').value.trim();
+  const HoraSal = document.getElementById('HoraSal').value.trim();
+  const HoraRegre = document.getElementById('HoraRegre').value.trim();
+  const RRHH = document.getElementById('RRHH').value.trim();
+  const Motivo = document.getElementById('Motivo').value.trim();
+  const lugares = document.getElementById('lugares').value.trim();
+  const Estado = document.getElementById('EstadoS').value.trim();
+  const placa = document.getElementById('placa').value.trim();
+  const motorista = document.getElementById('motorista').value.trim();
+  const Tgas = document.getElementById('Tgas').value.trim();
+  const justsoli = document.getElementById('justsoli').value.trim();
+  const newlugar = document.getElementById('NewLugar').value.trim();
+  const justcambio = document.getElementById('JustCambio').value.trim();
+  const Idsolicitud = document.getElementById('IdSolicitud').value.trim();
+  const UnSolicitante = document.getElementById('UnSolicitante').value.trim();
+  const OrdSuministro = document.getElementById('OrdSuministro').value.trim();
+  const Ncupones = document.getElementById('Ncupones').value.trim();
+  const SerieIni = document.getElementById('SerieIni').value.trim();
+  const SerieFin = document.getElementById('SerieFin').value.trim();
+  const CantAsing = document.getElementById('CantAsing').value.trim();
+  const Authorizado = document.getElementById('Authorizado').value.trim();
+  const Recibido = document.getElementById('Recibido').value.trim();
+  const marca = document.getElementById('Marca').value.trim();
+
+  console.log("🔍 Datos enviados para actualizar:");
+  console.log("Idsolicitud:", Idsolicitud);
+  console.log("User:", User);
+  console.log("Estado:", Estado);
+
+
+
+
+  const solicitud = { User, Fecsol, Fecsal, HoraSal, HoraRegre, RRHH, Motivo, lugares, Estado, placa, motorista, Tgas, justsoli, newlugar, justcambio, Idsolicitud, UnSolicitante, OrdSuministro, Ncupones, SerieIni, SerieFin, CantAsing, Authorizado, Recibido, marca
+       
+   
+   };
+
+       if (User === "" || Fecsol === "" || Fecsal === "" || HoraSal === "" || HoraRegre === ""
+        || RRHH === "" || Motivo === "" || lugares === "" || Estado === "" || placa === ""
+        || motorista === "" || Tgas === "" || justsoli === "" || newlugar === "" || justcambio === ""
+        || Idsolicitud === "" || UnSolicitante === "" || OrdSuministro === ""|| Ncupones === "" || SerieIni === ""
+        || SerieFin === "" || CantAsing === "" || Authorizado === "" || Recibido === "" || marca === ""
+    ) {
+    Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      text: "Por favor, complete los campos obligatorios.",
+    });
+    return;
+  }
+
+
+  google.script.run
+    .withSuccessHandler(() => {
+      listarSolicitudesN();
+      listarSolicitudesP();
+      bootstrap.Modal.getInstance(document.getElementById('modalNuevo')).hide();
+      Swal.fire("Solicitud Confirmada", "La solicitud a sido enviada", "success");
+    })
+    .withFailureHandler(error => alert('Error al enviar Solicitud: ' + error.message))
+    .actualizarSolicitudPorId(solicitud);
+} ;
+
+function setFechaActual() {
+  const hoy = new Date();
+  const yyyy = hoy.getFullYear();
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dd = String(hoy.getDate()).padStart(2, '0');
+  document.getElementById("Fecsol").value = `${yyyy}-${mm}-${dd}`;
+}
+
+// Función para generar un ID único de solicitud
+function setIdSolicitud() {
+  const ahora = new Date();
+  const yyyy = ahora.getFullYear();
+  const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dd = String(ahora.getDate()).padStart(2, '0');
+  const hh = String(ahora.getHours()).padStart(2, '0');
+  const min = String(ahora.getMinutes()).padStart(2, '0');
+  const ss = String(ahora.getSeconds()).padStart(2, '0');
+
+  // ID en formato: SOL-YYYYMMDD-HHMMSS
+  const id = `SOL/${yyyy}/${mm}/${dd}-${hh}:${min}:${ss}`;
+
+  document.getElementById("IdSolicitud").value = id;
+}
+
+// Inicializar valores al abrir el modal "Nueva Solicitud"
+document.getElementById("modalNuevo").addEventListener("shown.bs.modal", () => {
+  setFechaActual();
+  // Solo generar nuevo ID si el campo está vacío (es una solicitud nueva)
+  if (!document.getElementById("IdSolicitud").value) {
+    setIdSolicitud();
+  }
+});
+
+  // Función que cambia el contenido del modal dependiendo del botón
+   document.getElementById("modalSolicitud").addEventListener("click", function() {
+    prepararModalSolicitud();
+   
+    document.getElementById("UserSoli").style.display = "block";
+    document.getElementById("FecsolTXT").style.display = "block"
+    document.getElementById("Fecsol").style.display = "block";
+    document.getElementById("FecsolT2").style.display = "none";
+    document.getElementById("FecsolN").style.display = "none";
+    document.getElementById("Fecsal").style.display = "block";
+    document.getElementById("HoraSal").style.display = "block";
+    document.getElementById("HoraRegre").style.display = "block";
+    document.getElementById("RRHH").style.display = "block";
+    document.getElementById("Motivo").style.display = "block";
+    document.getElementById("lugares").style.display = "block";
+    document.getElementById("lEstado").style.display = "none";
+    document.getElementById("EstadoS").style.display = "none";
+    document.getElementById("lplaca").style.display = "none";
+    document.getElementById("placa").style.display = "none";
+    document.getElementById("lmotorista").style.display = "none";
+    document.getElementById("motorista").style.display = "none";  
+    document.getElementById("lTgas").style.display = "none";   
+    document.getElementById("Tgas").style.display = "none";
+    document.getElementById("ljustsoli").style.display = "none";     
+    document.getElementById("justsoli").style.display = "none"; 
+    document.getElementById("lNewLugar").style.display = "none";   
+    document.getElementById("NewLugar").style.display = "none";   
+    document.getElementById("lJustCambio").style.display = "none";  
+    document.getElementById("JustCambio").style.display = "none"; 
+    document.getElementById("lIdSolicitud").style.display = "none";    
+    document.getElementById("IdSolicitud").style.display = "none";    
+    document.getElementById("lUnSolicitante").style.display = "none"; 
+    document.getElementById("UnSolicitante").style.display = "none";     
+    document.getElementById("lOrdSuministro").style.display = "none";
+    document.getElementById("OrdSuministro").style.display = "none";     
+    document.getElementById("lNcupones").style.display = "none"; 
+    document.getElementById("Ncupones").style.display = "none";      
+    document.getElementById("lSerieIni").style.display = "none";
+    document.getElementById("SerieIni").style.display = "none";     
+    document.getElementById("lSerieFin").style.display = "none";
+    document.getElementById("SerieFin").style.display = "none";     
+    document.getElementById("lCantAsing").style.display = "none"; 
+    document.getElementById("CantAsing").style.display = "none";     
+    document.getElementById("lAuthorizado").style.display = "none";
+    document.getElementById("Authorizado").style.display = "none";     
+    document.getElementById("lRecibido").style.display = "none";
+    document.getElementById("Recibido").style.display = "none";     
+    document.getElementById("lMarca").style.display = "none";
+    document.getElementById("Marca").style.display = "none";
+    document.getElementById("btnCancelar").style.display = "block";
+    document.getElementById("btnActualizar").style.display = "none";
+    document.getElementById("btnGuardar").style.display = "block";
+  });
+
+function prepararModalSolicitud() {
+  if (usuarioLogueado && usuarioLogueado.User) {
+    document.getElementById("UserSoli").value = usuarioLogueado.User;
+    document.getElementById("UserSoli").readOnly = true; // para que no lo modifiquen
+  } else {
+    console.warn("No hay usuario logueado en memoria");
+  }
+}
+
+function inicializarSelect2MotoristasUser() {
+  google.script.run.withSuccessHandler(function(data) {
+    motoristasData = JSON.parse(data);
+
+    // Select para el modal de solicitud
+    const $selectMotorista = $('#motorista');
+    $selectMotorista.empty().append('<option></option>');
+    motoristasData.forEach(mot => {
+      $selectMotorista.append(new Option(mot.Nombre, mot.Nombre));
+    });
+
+    // Inicializar Select2 para el select de motorista
+    $('#motorista').select2({
+      placeholder: "Seleccione un motorista",
+      width: '100%',
+      dropdownParent: $('#modalNuevo')
+    });
+
+  }).obtenerMotoristasCompletos();
+}
+
+// Función para actualizar la tabla de solicitudes procesadas
+function actualizarTablaSolicitudesProcesadas() {
+  // Mostrar indicador de carga
+  const btnActualizar = document.getElementById('actualizarTabla');
+  const textoOriginal = btnActualizar.innerHTML;
+  btnActualizar.disabled = true;
+  btnActualizar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+  // Llamar a la función que recarga la tabla
+  listarSolicitudesP();
+
+  // Restaurar el botón después de un breve delay para simular la carga
+  setTimeout(() => {
+    btnActualizar.disabled = false;
+    btnActualizar.innerHTML = textoOriginal;
+  }, 1000);
+}
+
+// Event listener para el botón de actualizar tabla
+document.getElementById('actualizarTabla').addEventListener('click', actualizarTablaSolicitudesProcesadas);
+
+
+
+//Función para actualizar la tabla de solicitudes nuevas
+function actualizarTablaSolicitudesNuevas() {
+  // Mostrar indicador de carga
+  const btnActualizar = document.getElementById('actualizarTabla2');
+  const textoOriginal = btnActualizar.innerHTML;
+  btnActualizar.disabled = true;
+  btnActualizar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+  // Llamar a la función que recarga la tabla
+  listarSolicitudesN();
+
+  // Restaurar el botón después de un breve delay para simular la carga
+  setTimeout(() => {
+    btnActualizar.disabled = false;
+    btnActualizar.innerHTML = textoOriginal;
+  }, 1000);
+}
+
+// Event listener para el botón de actualizar tabla
+document.getElementById('actualizarTabla2').addEventListener('click', actualizarTablaSolicitudesNuevas);
+
+</script>

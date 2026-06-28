@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Incluye todos los Estilos de css y bootstrap -->
+  <?!= include('style'); ?>
+</head>
+
+<body>
+  <!-- Pantalla de logueo -->
+  <div id="login-page">
+    <!-- Contenedor que centra vertical y horizontalmente -->
+    <div class="d-flex justify-content-center align-items-center bg-light" style="min-height: 100vh; padding: 1rem;">
+      <!-- Tarjeta de logueo, ligeramente arriba del centro -->
+      <div class="card p-4 shadow" style="width: 100%; max-width: 400px; transform: translateY(-10%);">
+        <!-- Logos -->
+        <div class="logo d-flex justify-content-center gap-2 mb-3">
+          <img src="https://www.salud.gob.sv/archivos/pdf/plantillas_institucionales/logos-minsal-062019/header_transparente-gris-MINSAL-062019_membrete.png" alt="Emblema" class="img-fluid rounded-rectangle" style="width: 200px;">
+          <img src="https://i.postimg.cc/Jn88cQ1B/logo.jpg" alt="Emblema" class="img-fluid rounded-rectangle" style="width: 80px;">
+        </div>
+        <!-- Título del sistema -->
+        <h3 class="nav-text fw-bold fs-1 text-center" style="color: #00a2ff; padding: 15px;">Sistema de vehiculos</h3>
+        <!-- Formulario -->
+        <div class="mb-3">
+          <label for="usuario" class="form-label">Usuario</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" class="form-control" name="usuario" id="usuario" placeholder="Ingrese su usuario">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Contraseña</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" class="form-control" name="password" id="password" placeholder="Ingrese su contraseña">
+          </div>
+        </div>
+        <div class="d-grid">
+          <button class="btn btn-primary" onclick="validarLogin()">Ingresar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------------------------------------------------------------------ -->
+  <!-- Menú principal -->
+<div class="sidebar" id="sidebar" style="display: none;">
+  <!-- <div class="sidebar" id="sidebar"> -->
+  <div class="d-flex align-items-center px-2 pt-2">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <span class="nav-text fw-bold ms-2">Región Occidental</span>
+  </div>
+  <div class="logo">
+    <img src="https://www.salud.gob.sv/wp-content/uploads/2020/10/banner_web_wpminsal_2020-v2-1.png" alt="Emblema" class="img-fluid rounded-rectangle">
+  </div>
+
+  <div class="system-name">
+    <span class="nav-text fw-bold fs-2" style="color: #00a2ff;">Sistema de Transporte</span>
+    <hr class="mt-1">
+  </div>
+  <nav class="nav flex-column" id="nav-menu">
+    <a class="nav-link" href="#"
+      data-seccion="contenido-inicio"><i class="bi bi-house me-2"></i><span class="nav-text fw-bold fs-5">Inicio</span></a>
+
+
+
+    <!-- COSAS QUE PUEDE HACER O VER EL ADMINISTRADOR -->
+
+    <a class="nav-link" href="#"
+      data-seccion="contenido-usuarios" id="USERINSERT"><i class="bi bi-people me-2"></i><span class="nav-text fw-bold fs-5">Usuarios</span></a>
+    <a class="nav-link" href="#"
+      data-seccion="contenido-vehiculos"><i class="bi bi-truck me-2"></i><span class="nav-text fw-bold fs-5">Ingresar Vehículos</span></a>
+    <a class="nav-link" href="#" data-seccion="contenido-motoristas">
+      <i class="bi bi-person-gear me-2"></i>
+      <span class="nav-text fw-bold fs-5">Motoristas</span>
+    </a>
+
+    <a class="nav-link" href="#"
+      data-seccion="contenido-solicitudes"><i class="bi bi-file-earmark-plus me-2"></i><span class="nav-text fw-bold fs-5">Ingresa Solicitudes</span></a>
+    <a class="nav-link" href="#"
+      data-seccion="contenido-solicitudes-nuevas"><i class="bi bi-file-earmark-text me-2"></i><span class="nav-text fw-bold fs-5">Solicitudes Nuevas</span></a>
+    <a class="nav-link" href="#"
+      data-seccion="contenido-solicitudes-procesadas"><i class="bi bi-file-earmark-check me-2"></i><span class="nav-text fw-bold fs-5">Solicitudes procesadas</span></a>
+    <a class="nav-link" href="#"
+      data-seccion="contenido-consultas"><i class="bi bi-search me-2"></i><span class="nav-text fw-bold fs-5">Ver Consultas</span></a>
+
+
+    <a class="nav-link" href="#"
+      data-seccion="contenido-ayuda"><i class="bi bi-question-circle me-2"></i><span class="nav-text fw-bold fs-5">Ayuda</span></a>
+    <a class="nav-link" href="#"
+      data-seccion="contenido-acerca"><i class="bi bi-info-circle me-2"></i><span class="nav-text fw-bold fs-5">Acerca de</span></a>
+  </nav>
+  <div class="logout">
+    <hr class="mt-1">
+    <a class="nav-link text-warning text-center" href="#" onclick="cerrarSesion()">
+      <i class="bi bi-box-arrow-right me-2"></i>
+      <span class="nav-text fw-bold fs-5">Salir</span>
+    </a>
+  </div>
+</div>
+
+
+  </div>
+
+  <!-- ------------------------------------------------------------------------------------------------------------------------ -->
+
+
+
+
+  <!-- Contenedor y Secciones donde envía cada opción de menú -->
+  <div class="main-content text-center" id="main-content" style="line-height: 1;" style="display: none;">
+    <!-- <div class="main-content text-center" id="main-content" style="line-height: 1;"> -->
+    <!-- En la sección contenido-inicio, reemplaza el contenido actual con este: -->
+    <div id="contenido-inicio" style="display: none;">
+      <div class="container mt-4">
+        <div class="card shadow-sm border-primary">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="bi bi-house-door me-2"></i>Panel de Inicio</h4>
+          </div>
+          <div class="card-body">
+            <div class="welcome-banner p-4 mb-4 bg-light rounded">
+              <h3 class="text-primary">Bienvenid@, <span id="user-name-display">[Nombre de usuario]</span></h3>
+              <div class="user-details mt-3">
+                <h3 class="mb-1"><strong>Cargo:</strong> <span id="user-position-display">[Cargo]</span></h3>
+                <h3 class="mb-0"><strong>Sede/Establecimiento:</strong>
+                  <span id="user-location-display">[Establecimiento]</span>
+                </h3>
+              </div>
+            </div>
+            <div class="additional-content">
+              <p>Seleccione una opción del menú lateral para comenzar.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- SECCIÓN DE USUARIOS -->
+    <div id="contenido-usuarios" style="display: none;">
+      <div class="container-fluid px-2">
+        <div class="card shadow-sm rounded-4 p-4 bg-white">
+
+          <!-- Encabezado -->
+          <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+            <h3 class="text-primary fw-bold mb-0">
+              <i class="bi bi-people me-2 text-primary"></i>Gestión de Usuarios
+            </h3>
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+    <i class="bi bi-plus-circle-fill me-2 text-white"></i> Nuevo Usuario
+</button>
+          </div>
+
+          <!-- Tabla de usuarios -->
+          <div class="table-responsive">
+            <table id="tablaUsuarios" class="table table-striped table-hover align-middle text-center"
+              style="min-width: 1000px;">
+              <thead class="table-dark text-center">
+                <tr>
+                  <th>Usuario</th>
+                  <th>Contraseña</th>
+                  <th>Tipo Usuario</th>
+                  <th>Nombre</th>
+                  <th>Cargo</th>
+                  <th>Área</th>
+                  <th>Establecimiento</th>
+                  <th>Distrito</th>
+                  <th>Municipio</th>
+                  <th>SIBASI</th>
+                  <th>Departamento</th>
+                  <th>Regional</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="cuerpoUsuarios">
+                <!-- Datos dinámicos -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE AUTOMÓVILES -->
+    <div id="contenido-vehiculos" style="display: none;">
+      <div class="container-fluid px-2">
+        <div class="card shadow-sm rounded-4 p-4 bg-white">
+
+          <!-- Encabezado -->
+          <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+            <h3 class="text-primary fw-bold mb-0">
+              <i class="bi bi-car-front me-2 text-primary"></i>Gestión de Automóviles
+            </h3>
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalAutomovil">
+    <i class="bi bi-plus-circle-fill me-2 text-white"></i> Nuevo Automóvil
+</button>
+          </div>
+
+          <!-- Tabla de automóviles -->
+          <div class="table-responsive">
+            <table id="tablaAutomoviles" class="table table-striped table-hover align-middle text-center"
+              style="min-width: 1000px;">
+              <thead class="table-dark text-center">
+                <tr>
+                  <th>Placa</th>
+                  <th>Tipo Vehículo</th>
+                  <th>Tipo Gasolina</th>
+                  <th>Estado</th>
+                  <th>Comentario</th>
+                  <th>Año Vehículo</th>
+                  <th>Establecimiento</th>
+                  <th>Marca</th>
+                  <th>Modelo</th>
+                  <th>Último Mantenimiento</th>
+                  <th>Costo Mantenimiento</th>
+                </tr>
+              </thead>
+              <tbody id="cuerpoAutomoviles">
+                <!-- Datos dinámicos -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- SECCIÓN DE MOTORISTAS -->
+    <div id="contenido-motoristas" style="display: none;">
+      <div class="container-fluid px-2">
+        <div class="card shadow-sm rounded-4 p-4 bg-white">
+
+          <!-- Encabezado -->
+          <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+            <h3 class="text-primary fw-bold mb-0">
+              <i class="bi bi-truck-front-fill me-2 text-primary"></i>Gestión de Motoristas
+            </h3>
+            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalMotorista">
+                        <i class="bi bi-person-plus-fill me-2 text-white"></i> Nuevo Motorista
+                    </button>
+          </div>
+
+          <!-- Tabla de motoristas -->
+          <div class="table-responsive">
+            <table id="tablaMotoristas" class="table table-striped table-hover align-middle text-center"
+              style="min-width: 1000px;">
+              <thead class="table-dark text-center">
+                <tr>
+                  <th>Nombre</th>
+                  <th>Fecha Nacimiento</th>
+                  <th>Fecha Ingreso</th>
+                  <th>Tipo Licencia</th>
+                  <th>N° Licencia</th>
+                  <th>DUI</th>
+                  <th>Venc. Licencia</th>
+                  <th>Tipo Sangre</th>
+                  <th>Enfermedad Crónica</th>
+                  <th>Estado</th>
+                  <th>Familiar Emergencia</th>
+                  <th>Tel. Emergencia</th>
+                  <th>Establecimiento</th>
+                </tr>
+              </thead>
+              <tbody id="cuerpoMotoristas">
+                <!-- Datos dinámicos -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!------------------------------------------------------------------------------------------------------------------------>
+
+
+    <!-- SECCION DE SOLICITUDES PEDIDAS -->
+
+
+    <div id="contenido-solicitudes" style="display: none;">
+      <h1>Peticion de Solicitudes</h1>
+
+      <div class="container mt-4">
+        <!-- Botón para crear nueva solicitud -->
+        <div class="text-start mb-5 mt-5">
+          <button  class="btn btn-primary btn-lg" style="font-size: 1.1rem;"
+        data-bs-toggle="modal" data-bs-target="#modalNuevo" id="modalSolicitud">
+        <span class="me-2"><i class="bi bi-person-plus-fill text-white me-2"></i></span>
+        Nueva Solicitud
+      </button>
+        </div>
+
+        <!-- Tabla completa de solicitudes -->
+        <table id="tablaSoli" class="table table-striped table-bordered" style="width:100%">
+          <thead class="table-dark text-center">
+            <tr>
+              <th>Usuario</th>
+              <th>FecSol</th>
+              <th>FecSal</th>
+              <th>HoraSal</th>
+              <th>HoraRegre</th>
+              <th>RRHH</th>
+              <th>Motivo</th>
+              <th>Lugares</th>
+              <!-- NO SALEN -->
+              <th>Estado</th>
+              <th>Placa</th>
+              <th>Motorista</th>
+              <th>Tipo Gas</th>
+              <th>Just. Solicitud</th>
+              <th>Nuevo Lugar</th>
+              <th>Just. Cambio</th>
+              <th>ID Solicitud</th>
+              <th>Un. Solicitante</th>
+              <th>Ord. Suministro</th>
+              <th># Cupones</th>
+              <th>Serie Inicio</th>
+              <th>Serie Fin</th>
+              <th>Cant. Asignada</th>
+              <th>Autorizado</th>
+              <th>Recibido</th>
+              <th>Marca</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoSoli">
+            <!-- Datos dinámicos se insertan aquí -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+
+
+    <div id="contenido-solicitudes-nuevas" style="display: none;">
+      <h1>Solicitudes nuevas</h1>
+
+            <div class="container mt-4">
+        <!-- Botón para crear nueva solicitud -->
+        <div class="text-start mb-5 mt-5">
+          <button  class="btn btn-primary btn-lg" style="font-size: 1.1rem;"
+        id="actualizarTabla2">
+        <span class="me-2"><i class="bi bi-person-plus-fill text-white me-2"></i></span>
+        Actualizar Tabla
+      </button>
+        </div>
+      </div>
+
+      <!-- Tabla completa de solicitudes -->
+      <table id="tablaSoliN" class="table table-striped table-bordered" style="width:100%">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Usuario</th>
+            <th>FecSol</th>
+            <th>FecSal</th>
+            <th>HoraSal</th>
+            <th>HoraRegre</th>
+            <th>RRHH</th>
+            <th>Motivo</th>
+            <th>Lugares</th>
+            <th>Estado</th>
+            <th>Placa</th>
+            <th>Motorista</th>
+            <th>Tipo Gas</th>
+            <th>Just. Solicitud</th>
+            <th>Nuevo Lugar</th>
+            <th>Just. Cambio</th>
+            <th>ID Solicitud</th>
+            <th>Un. Solicitante</th>
+            <th>Ord. Suministro</th>
+            <th># Cupones</th>
+            <th>Serie Inicio</th>
+            <th>Serie Fin</th>
+            <th>Cant. Asignada</th>
+            <th>Autorizado</th>
+            <th>Recibido</th>
+            <th>Marca</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoSoliN">
+          <!-- Datos dinámicos aquí -->
+        </tbody>
+      </table>
+
+
+
+
+    </div>
+
+    <div id="contenido-solicitudes-procesadas" style="display: none;">
+      <h1>Solicitudes procesadas</h1>
+
+
+
+      <div class="container mt-4">
+        <!-- Botón para crear nueva solicitud -->
+        <div class="text-start mb-5 mt-5">
+          <button  class="btn btn-primary btn-lg" style="font-size: 1.1rem;"
+        id="actualizarTabla">
+        <span class="me-2"><i class="bi bi-person-plus-fill text-white me-2"></i></span>
+        Actualizar Tabla
+      </button>
+        </div>
+      </div>
+        
+      <!-- Tabla completa de solicitudes -->
+      <table id="tablaSoliP" class="table table-striped table-bordered" style="width:100%">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>Usuario</th>
+            <th>FecSol</th>
+            <th>FecSal</th>
+            <th>HoraSal</th>
+            <th>HoraRegre</th>
+            <th>RRHH</th>
+            <th>Motivo</th>
+            <th>Lugares</th>
+            <th>Estado</th>
+            <th>Placa</th>
+            <th>Motorista</th>
+            <th>Tipo Gas</th>
+            <th>Just. Solicitud</th>
+            <th>Nuevo Lugar</th>
+            <th>Just. Cambio</th>
+            <th>ID Solicitud</th>
+            <th>Un. Solicitante</th>
+            <th>Ord. Suministro</th>
+            <th># Cupones</th>
+            <th>Serie Inicio</th>
+            <th>Serie Fin</th>
+            <th>Cant. Asignada</th>
+            <th>Autorizado</th>
+            <th>Recibido</th>
+            <th>Marca</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoSoliP">
+          <!-- Datos dinámicos se insertan aquí -->
+        </tbody>
+      </table>
+
+
+
+    </div>
+
+
+
+
+    <div id="contenido-ayuda" style="display: none;">
+      <h1>Ayuda</h1>
+      <p>Información para el usuario.</p>
+    </div>
+
+    <div id="contenido-acerca" style="display: none;">
+      <h1>Acerca de</h1>
+      <p>Detalles del sistema y su versión.</p>
+    </div>
+  </div>
+
+
+
+
+  <!-- Inicio de Modales -->
+
+
+
+  <!------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+  <!-- MODAL NUEVO USUARIO -->
+  <div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-6">
+              <label class="form-label">Usuario (Email)</label>
+              <input type="email" class="form-control" id="User" placeholder="usuario@salud.gob.sv" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="Password" placeholder="Contraseña" required>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-6">
+              <label class="form-label">Tipo de Usuario</label>
+              <select class="form-select" id="TUser" required>
+                <option value="" selected disabled>Selecciona tipo</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Operador">Operador</option>
+                <option value="Consulta">Consulta</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nombre Completo</label>
+              <input type="text" class="form-control" id="Nombre" placeholder="Nombre completo" required>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-6">
+              <label class="form-label">Cargo</label>
+              <input type="text" class="form-control" id="Cargo" placeholder="Cargo del usuario" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Área</label>
+              <input type="text" class="form-control" id="Area" placeholder="Área de trabajo" required>
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-6">
+              <label class="form-label">Establecimiento</label>
+              <select class="form-select select2-establecimiento-user" id="EstablecimientoUser" required>
+                <option value="" disabled selected>Selecciona establecimiento</option>
+                <!-- Las opciones se cargarán dinámicamente -->
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="EstadoUser" required>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+
+            <!-- Fila 5 - Campos autocompletados y deshabilitados -->
+            <div class="col-md-4">
+              <label class="form-label">Distrito</label>
+              <input type="text" class="form-control" id="DistritoUser" disabled>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Municipio</label>
+              <input type="text" class="form-control" id="MunicipioUser" disabled>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">SIBASI</label>
+              <input type="text" class="form-control" id="SIBASIUser" disabled>
+            </div>
+
+            <!-- Fila 6 -->
+            <div class="col-md-6">
+              <label class="form-label">Departamento</label>
+              <input type="text" class="form-control" id="DepartamentoUser" disabled>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Regional</label>
+              <input type="text" class="form-control" id="RegionalUser" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR USUARIO -->
+  <div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarUsuarioLabel">Editar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="UsuarioRowIndexEdit">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-6">
+              <label for="UserEdit" class="form-label">Usuario (Email)</label>
+              <input type="email" class="form-control" id="UserEdit" required>
+            </div>
+            <div class="col-md-6">
+              <label for="PasswordEdit" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="PasswordEdit" required>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-6">
+              <label for="TUserEdit" class="form-label">Tipo de Usuario</label>
+              <select class="form-select" id="TUserEdit" required>
+                <option value="" selected disabled>Selecciona tipo</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Operador">Operador</option>
+                <option value="Consulta">Consulta</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="NombreEdit" class="form-label">Nombre Completo</label>
+              <input type="text" class="form-control" id="NombreEdit" required>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-6">
+              <label for="CargoEdit" class="form-label">Cargo</label>
+              <input type="text" class="form-control" id="CargoEdit" required>
+            </div>
+            <div class="col-md-6">
+              <label for="AreaEdit" class="form-label">Área</label>
+              <input type="text" class="form-control" id="AreaEdit" required>
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-6">
+              <label for="EstablecimientoUserEditSelect" class="form-label">Establecimiento</label>
+              <input type="text" class="form-control" id="EstablecimientoUserEdit" hidden>
+              <select class="form-select select2-establecimiento-user" id="EstablecimientoUserEditSelect" required>
+                <option value="" disabled selected>Selecciona establecimiento</option>
+                <!-- Las opciones se cargarán dinámicamente -->
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="EstadoUserEdit" class="form-label">Estado</label>
+              <select class="form-select" id="EstadoUserEdit" required>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+
+            <!-- Fila 5 - Campos autocompletados y deshabilitados -->
+            <div class="col-md-4">
+              <label for="DistritoUserEdit" class="form-label">Distrito</label>
+              <input type="text" class="form-control" id="DistritoUserEdit" disabled>
+            </div>
+            <div class="col-md-4">
+              <label for="MunicipioUserEdit" class="form-label">Municipio</label>
+              <input type="text" class="form-control" id="MunicipioUserEdit" disabled>
+            </div>
+            <div class="col-md-4">
+              <label for="SIBASIUserEdit" class="form-label">SIBASI</label>
+              <input type="text" class="form-control" id="SIBASIUserEdit" disabled>
+            </div>
+
+            <!-- Fila 6 -->
+            <div class="col-md-6">
+              <label for="DepartamentoUserEdit" class="form-label">Departamento</label>
+              <input type="text" class="form-control" id="DepartamentoUserEdit" disabled>
+            </div>
+            <div class="col-md-6">
+              <label for="RegionalUserEdit" class="form-label">Regional</label>
+              <input type="text" class="form-control" id="RegionalUserEdit" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="actualizarUsuario()">Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--FIN-->
+
+  <!-- MODAL NUEVO MOTORISTA-->
+  <div class="modal fade" id="modalMotorista" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Motorista</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-4">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="Nombremo" placeholder="Nombre completo" required minlength="2" maxlength="100" pattern="[A-Za-záéíóúñÁÉÍÓÚÑ\s]+">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Fecha Nacimiento</label>
+              <input type="date" class="form-control" id="Fechnat" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Fecha Ingreso</label>
+              <input type="date" class="form-control" id="Fechingre" required>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-4">
+              <label class="form-label">Tipo Licencia</label>
+              <select class="form-select" id="Tlicencia" aria-label="Selecciona un tipo de licencia" required>
+                                <option value="" selected disabled>Selecciona un tipo de licencia</option>
+                                <option value="pesada-t">Pesada, categoría T (Tráiler)</option>
+                                <option value="pesada">Pesada</option>
+                                <option value="liviana">Liviana</option>
+                                <option value="particular">Particular</option>
+                                <option value="motociclista">Motociclista</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Número Licencia</label>
+              <input type="text" class="form-control" id="Nlicencia" placeholder="Número" required maxlength="20" pattern="[A-Za-z0-9\-]+">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">DUI</label>
+              <input type="text" class="form-control" id="DUI" placeholder="00000000-0" required pattern="[0-9]{8}-[0-9]{1}" maxlength="10">
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-4">
+              <label class="form-label">Vencimiento Licencia</label>
+              <input type="date" class="form-control" id="FECHVENLIC" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo de Sangre</label>
+              <select class="form-select" id="Tsangre" aria-label="Selecciona tu tipo de sangre" required>
+                                <option value="" selected disabled>Selecciona tu tipo de sangre</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Enfermedad Crónica</label>
+              <input type="text" class="form-control" id="EnfeCroc" placeholder="Ej: Diabetes" maxlength="200">
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-4">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="Estadomo" required>
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Familiar Emergencia</label>
+              <input type="text" class="form-control" id="FamEmerger" placeholder="Nombre completo" required minlength="2" maxlength="100" pattern="[A-Za-záéíóúñÁÉÍÓÚÑ\s]+">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Teléfono Emergencia</label>
+              <input type="number" class="form-control" id="NumEMer" placeholder="00000000" required min="10000000" max="99999999">
+            </div>
+
+            <!-- Fila 5 -->
+            <div class="col-md-4">
+              <label class="form-label">Establecimiento</label>
+              <select class="form-select select2-establecimiento" id="Establecimientomo" required>
+                                <option value="" disabled selected>Selecciona establecimiento</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarMotorista()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR MOTORISTA -->
+  <div class="modal fade" id="modalEditarMotorista" tabindex="-1" aria-labelledby="modalEditarMotoristaLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarMotoristaLabel">Editar Motorista</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="MotoristaRowIndexEdit">
+          <div class="row g-3">
+
+            <!-- Fila 1 -->
+            <div class="col-md-4">
+              <label for="NombremoEdit" class="form-label">Nombre Completo</label>
+              <input type="text" class="form-control" id="NombremoEdit" required minlength="2" maxlength="100" pattern="[A-Za-záéíóúñÁÉÍÓÚÑ\s]+">
+            </div>
+            <div class="col-md-4">
+              <label for="FechnatEdit" class="form-label">Fecha de Nacimiento</label>
+              <input type="date" class="form-control" id="FechnatEdit" required>
+            </div>
+            <div class="col-md-4">
+              <label for="FechingreEdit" class="form-label">Fecha de Ingreso</label>
+              <input type="date" class="form-control" id="FechingreEdit" required>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-4">
+              <label for="TlicenciaEdit" class="form-label">Tipo de Licencia</label>
+              <select class="form-select" id="TlicenciaEdit" aria-label="Selecciona un tipo de licencia" required>
+                                <option value="" selected disabled>Selecciona un tipo de licencia</option>
+                                <option value="pesada-t">Pesada, categoría T (Tráiler)</option>
+                                <option value="pesada">Pesada</option>
+                                <option value="liviana">Liviana</option>
+                                <option value="particular">Particular</option>
+                                <option value="motociclista">Motociclista</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="NlicenciaEdit" class="form-label">Número de Licencia</label>
+              <input type="text" class="form-control" id="NlicenciaEdit" required maxlength="20" pattern="[A-Za-z0-9\-]+">
+            </div>
+            <div class="col-md-4">
+              <label for="DUIEdit" class="form-label">DUI</label>
+              <input type="text" class="form-control" id="DUIEdit" required pattern="[0-9]{8}-[0-9]{1}" maxlength="10" placeholder="00000000-0">
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-4">
+              <label for="FECHVENLICEdit" class="form-label">Vencimiento de Licencia</label>
+              <input type="date" class="form-control" id="FECHVENLICEdit" required>
+            </div>
+            <div class="col-md-4">
+              <label for="TsangreEdit" class="form-label">Tipo de Sangre</label>
+              <select class="form-select" id="TsangreEdit" aria-label="Selecciona tu tipo de sangre" required>
+                                <option value="" selected disabled>Selecciona tu tipo de sangre</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="EnfeCrocEdit" class="form-label">Enfermedad Crónica</label>
+              <input type="text" class="form-control" id="EnfeCrocEdit" maxlength="200">
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-4">
+              <label for="EstadoEditmo" class="form-label">Estado</label>
+              <select class="form-select" id="EstadoEditmo" required>
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="FamEmergerEdit" class="form-label">Contacto de Emergencia</label>
+              <input type="text" class="form-control" id="FamEmergerEdit" required minlength="2" maxlength="100" pattern="[A-Za-záéíóúñÁÉÍÓÚÑ\s]+">
+            </div>
+            <div class="col-md-4">
+              <label for="NumEMerEdit" class="form-label">Teléfono de Emergencia</label>
+              <input type="number" class="form-control" id="NumEMerEdit" required min="10000000" max="99999999" placeholder="00000000">
+            </div>
+
+            <!-- Fila 5 -->
+            <div class="col-md-4">
+              <label for="EstablecimientomoEditSelect" class="form-label">Establecimiento</label>
+              <input type="text" class="form-control" id="EstablecimientomoEdit" hidden>
+              <select class="form-select select2-establecimiento" id="EstablecimientomoEditSelect" required>
+                                <option value="" disabled selected>Selecciona establecimiento</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="actualizarMotorista()">Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+
+  <!-- SECCIÓN DE VEHÍCULOS -->
+
+
+  <!-- MODAL NUEVO VEHÍCULO -->
+  <!-- MODAL DE VEHÍCULO -->
+  <div class="modal fade" id="modalVehiculo" tabindex="-1" aria-labelledby="modalVehiculoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h1 class="modal-title fs-5" id="modalVehiculoLabel">
+            <i class="bi bi-plus-circle me-2"></i>Nuevo Vehículo
+          </h1>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form id="formVehiculo">
+          <div class="modal-body">
+            <!-- Campos ocultos -->
+            <input type="hidden" id="modoEdicion" value="false">
+            <input type="hidden" id="vehiculoId" value="">
+
+            <div class="row">
+              <!-- Placa -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoPlaca" class="form-label">
+                                <i class="bi bi-credit-card me-1"></i>Placa *
+                            </label>
+                <input type="text" class="form-control" id="vehiculoPlaca" required
+                                   placeholder="Ej: P123456" maxlength="10" style="text-transform: uppercase;">
+              </div>
+
+              <!-- Tipo de Vehículo -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoTipo" class="form-label">
+                                <i class="bi bi-truck me-1"></i>Tipo de Vehículo *
+                            </label>
+                <select class="form-select" id="vehiculoTipo" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="Sedan">Sedán</option>
+                                <option value="Pick-up">Pick-up</option>
+                                <option value="Camioneta">Camioneta</option>
+                                <option value="SUV">SUV</option>
+                                <option value="Ambulancia">Ambulancia</option>
+                                <option value="Motocicleta">Motocicleta</option>
+                                <option value="Bus">Bus</option>
+                                <option value="Camión">Camión</option>
+                            </select>
+              </div>
+
+              <!-- Tipo de Combustible -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoGasolina" class="form-label">
+                                <i class="bi bi-fuel-pump me-1"></i>Combustible *
+                            </label>
+                <select class="form-select" id="vehiculoGasolina" required>
+                                <option value="">Seleccionar combustible...</option>
+                                <option value="Gasolina Regular">Gasolina Regular</option>
+                                <option value="Gasolina Super">Gasolina Súper</option>
+                                <option value="Diesel">Diésel</option>
+                                <option value="Gas Licuado">Gas Licuado</option>
+                                <option value="Eléctrico">Eléctrico</option>
+                                <option value="Híbrido">Híbrido</option>
+                            </select>
+              </div>
+
+              <!-- Estado -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoEstado" class="form-label">
+                                <i class="bi bi-check-circle me-1"></i>Estado *
+                            </label>
+                <select class="form-select" id="vehiculoEstado" required>
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                                <option value="2">En Mantenimiento</option>
+                            </select>
+              </div>
+
+              <!-- Marca -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoMarca" class="form-label">
+                                <i class="bi bi-tag me-1"></i>Marca
+                            </label>
+                <input type="text" class="form-control" id="vehiculoMarca"
+                                   placeholder="Ej: Toyota, Ford" maxlength="50">
+              </div>
+
+              <!-- Modelo -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoModelo" class="form-label">
+                                <i class="bi bi-car-front me-1"></i>Modelo
+                            </label>
+                <input type="text" class="form-control" id="vehiculoModelo"
+                                   placeholder="Ej: Corolla, F-150" maxlength="50">
+              </div>
+
+              <!-- Año -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoAnio" class="form-label">
+                                <i class="bi bi-calendar me-1"></i>Año
+                            </label>
+                <input type="number" class="form-control" id="vehiculoAnio"
+                                   min="1990" max="2030" placeholder="2020">
+              </div>
+
+              <!-- Establecimiento -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoEstablecimiento" class="form-label">
+                                <i class="bi bi-building me-1"></i>Establecimiento
+                            </label>
+                <input type="text" class="form-control" id="vehiculoEstablecimiento"
+                                   placeholder="Establecimiento asignado" maxlength="100">
+              </div>
+
+              <!-- Fecha de Mantenimiento -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoMantenimiento" class="form-label">
+                                <i class="bi bi-tools me-1"></i>Último Mantenimiento
+                            </label>
+                <input type="date" class="form-control" id="vehiculoMantenimiento">
+              </div>
+
+              <!-- Costo -->
+              <div class="col-md-6 mb-3">
+                <label for="vehiculoCosto" class="form-label">
+                                <i class="bi bi-currency-dollar me-1"></i>Costo Mantenimiento
+                            </label>
+                <input type="number" class="form-control" id="vehiculoCosto"
+                                   step="0.01" min="0" placeholder="0.00">
+              </div>
+
+              <!-- Comentarios -->
+              <div class="col-12 mb-3">
+                <label for="vehiculoComentario" class="form-label">
+                                <i class="bi bi-chat-text me-1"></i>Comentarios
+                            </label>
+                <textarea class="form-control" id="vehiculoComentario" rows="2"
+                                      placeholder="Observaciones adicionales..." maxlength="500"></textarea>
+              </div>
+            </div>
+
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-info-circle me-2"></i>
+              Los campos marcados con (*) son obligatorios
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+            <button type="submit" class="btn btn-primary" id="btnGuardarVehiculo">
+                        <i class="bi bi-save me-1"></i>Guardar Vehículo
+                    </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL NUEVO AUTOMÓVIL -->
+  <div class="modal fade" id="modalAutomovil" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nuevo Automóvil</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-4">
+              <label class="form-label">Placa</label>
+              <input type="text" class="form-control" id="Placa" placeholder="Ej: ABC123" required maxlength="10">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo Vehículo</label>
+              <select class="form-select" id="tipovehiculo" required>
+              <option value="" selected disabled>Selecciona tipo</option>
+              <option value="Sedán">Sedán</option>
+              <option value="SUV">SUV</option>
+              <option value="Pickup">Pickup</option>
+              <option value="Motocicleta">Motocicleta</option>
+              <option value="Camión">Camión</option>
+              <option value="Ambulancia">Ambulancia</option>
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo Gasolina</label>
+              <select class="form-select" id="tipogasolina" required>
+              <option value="" selected disabled>Selecciona tipo</option>
+              <option value="Regular">Regular</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Premium">Premium</option>
+              <option value="Eléctrico">Eléctrico</option>
+            </select>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-4">
+              <label class="form-label">Estado</label>
+              <select class="form-select" id="Estadoauto" required>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Comentario</label>
+              <input type="text" class="form-control" id="Comentarioauto" placeholder="Observaciones" maxlength="200">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Año Vehículo</label>
+              <input type="number" class="form-control" id="aniovehiculo" placeholder="Ej: 2020" min="1900" max="2100" required>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-4">
+              <label class="form-label">Establecimiento</label>
+              <select class="form-select select2-establecimiento-auto" id="Establecimientoauto" required>
+              <option value="" disabled selected>Selecciona establecimiento</option>
+              <!-- Las opciones se cargarán dinámicamente -->
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Marca</label>
+              <input type="text" class="form-control" id="marca" placeholder="Ej: Toyota" required maxlength="50">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Modelo</label>
+              <input type="text" class="form-control" id="Modelo" placeholder="Ej: Corolla" required maxlength="50">
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-4">
+              <label class="form-label">Último Mantenimiento</label>
+              <input type="date" class="form-control" id="ult_fechmantenimiento" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Costo Mantenimiento</label>
+              <input type="number" class="form-control" id="costmante" placeholder="0.00" min="0" step="0.01" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarAutomovil()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR AUTOMÓVIL -->
+  <div class="modal fade" id="modalEditarAutomovil" tabindex="-1" aria-labelledby="modalEditarAutomovilLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalEditarAutomovilLabel">Editar Automóvil</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="AutomovilRowIndexEdit">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-4">
+              <label for="PlacaEdit" class="form-label">Placa</label>
+              <input type="text" class="form-control" id="PlacaEdit" required maxlength="10">
+            </div>
+            <div class="col-md-4">
+              <label for="tipovehiculoEdit" class="form-label">Tipo Vehículo</label>
+              <select class="form-select" id="tipovehiculoEdit" required>
+              <option value="" selected disabled>Selecciona tipo</option>
+              <option value="Sedán">Sedán</option>
+              <option value="SUV">SUV</option>
+              <option value="Pickup">Pickup</option>
+              <option value="Motocicleta">Motocicleta</option>
+              <option value="Camión">Camión</option>
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="tipogasolinaEdit" class="form-label">Tipo Gasolina</label>
+              <select class="form-select" id="tipogasolinaEdit" required>
+              <option value="" selected disabled>Selecciona tipo</option>
+              <option value="Regular">Regular</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Premium">Premium</option>
+              <option value="Eléctrico">Eléctrico</option>
+            </select>
+            </div>
+
+            <!-- Fila 2 -->
+            <div class="col-md-4">
+              <label for="EstadoautoEdit" class="form-label">Estado</label>
+              <select class="form-select" id="EstadoautoEdit" required>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="ComentarioautoEdit" class="form-label">Comentario</label>
+              <input type="text" class="form-control" id="ComentarioautoEdit" maxlength="200">
+            </div>
+            <div class="col-md-4">
+              <label for="aniovehiculoEdit" class="form-label">Año Vehículo</label>
+              <input type="number" class="form-control" id="aniovehiculoEdit" min="1900" max="2100" required>
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="col-md-4">
+              <label for="EstablecimientoautoEditSelect" class="form-label">Establecimiento</label>
+              <input type="text" class="form-control" id="EstablecimientoautoEdit" hidden>
+              <select class="form-select select2-establecimiento-auto" id="EstablecimientoautoEditSelect" required>
+              <option value="" disabled selected>Selecciona establecimiento</option>
+              <!-- Las opciones se cargarán dinámicamente -->
+            </select>
+            </div>
+            <div class="col-md-4">
+              <label for="marcaEdit" class="form-label">Marca</label>
+              <input type="text" class="form-control" id="marcaEdit" required maxlength="50">
+            </div>
+            <div class="col-md-4">
+              <label for="ModeloEdit" class="form-label">Modelo</label>
+              <input type="text" class="form-control" id="ModeloEdit" required maxlength="50">
+            </div>
+
+            <!-- Fila 4 -->
+            <div class="col-md-4">
+              <label for="ult_fechmantenimientoEdit" class="form-label">Último Mantenimiento</label>
+              <input type="date" class="form-control" id="ult_fechmantenimientoEdit" required>
+            </div>
+            <div class="col-md-4">
+              <label for="costmanteEdit" class="form-label">Costo Mantenimiento</label>
+              <input type="number" class="form-control" id="costmanteEdit" min="0" step="0.01" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-primary" onclick="actualizarAutomovil()">Actualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--FIN-->
+
+  <!-- MODALES DE SOLICITUD -->
+  <div class="modal fade" id="modalNuevo" aria-labelledby="modalNuevo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agregar Nueva Solicitud</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <!-- Fila 1 -->
+            <div class="col-md-4">
+              <input type="hidden" id="SoliRowIndexEdit">
+            </div>
+
+
+            <div class="col-md-4">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="UserSoli" placeholder="example@gmail.com" readonly>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="FecsolTXT">Fecha de Solicitud</label>
+              <input type="date" class="form-control" id="Fecsol" readonly>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="FecsolT2">Fecha de Solicitud</label>
+              <input type="date" class="form-control" id="FecsolN" readonly>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Fecha de Salida</label>
+              <input type="date" class="form-control" id="Fecsal" placeholder="27/05/2026">
+            </div>
+
+            <!-- Fila 2 -->
+
+            <div class="col-md-4">
+              <label class="form-label">Hora Salida</label>
+              <input type="time" class="form-control" id="HoraSal" placeholder="7:00 AM">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Hora de Regreso</label>
+              <input type="time" class="form-control" id="HoraRegre" placeholder="15:00 PM">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Acompañante</label>
+              <input type="text" class="form-control" id="RRHH" placeholder="Juan Carlos">
+              </select>
+            </div>
+
+            <!-- Fila 3 -->
+
+            <div class="col-md-4">
+              <label class="form-label" >Motivo de Viaje</label>
+              <input type="text" class="form-control" id="Motivo" placeholder="Entrega de Medicamento">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Agregar Nuevo Lugar</label>
+              <input type="text" class="form-control" id="lugares" placeholder="Unidad Santa Ana">
+            </div>
+
+
+
+
+            <div class="col-md-4">
+              <label class="form-label" id="lEstado">Estado de Solicitud</label>
+              <select class="form-select" id="EstadoS">
+                  <option value="1"> Aceptada</option>
+                  <option value="2"> Denegada</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lplaca" >Placa del Carror</label>
+              <input type="text" class="form-control" id="placa" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lmotorista" >Seleccioar Motorista</label>
+              
+                    <select class="form-select select2-motorista-user" id="motorista" required>
+                    <option value="" disabled selected>Selecciona el Motorista</option>
+                          <!-- Las opciones se cargarán dinámicamente -->
+                      </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lTgas">Solicitud de Gas</label>
+              <input type="text" class="form-control" id="Tgas" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="ljustsoli">Justificacion de Solicitud</label>
+              <input type="text" class="form-control" id="justsoli" placeholder="Unidad Santa Ana">
+            </div>
+
+            <!-- ESTO TIENE QUE ESTAR OPCIONAL -->
+
+            <div class="col-md-4">
+              <label class="form-label" id="lNewLugar" >Nuevo Lugar</label>
+              <input type="text" class="form-control" id="NewLugar" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lJustCambio" >Justificacion de Nuevo Lugar</label>
+              <input type="text" class="form-control" id="JustCambio" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lIdSolicitud">ID De solicitud</label>
+              <input type="text" class="form-control" id="IdSolicitud" placeholder="Unidad Santa Ana" readonly>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lUnSolicitante">UnSolicitante</label>
+              <input type="text" class="form-control" id="UnSolicitante" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lOrdSuministro">Orden de Suministro</label>
+              <input type="text" class="form-control" id="OrdSuministro" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lNcupones">Numero de Cupones</label>
+              <input type="text" class="form-control" id="Ncupones" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lSerieIni">Serie Inicial</label>
+              <input type="text" class="form-control" id="SerieIni" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lSerieFin">Serie Final</label>
+              <input type="text" class="form-control" id="SerieFin" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lCantAsing">Cantidad Asignada</label>
+              <input type="text" class="form-control" id="CantAsing" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lAuthorizado">Autorizado</label>
+              <input type="text" class="form-control" id="Authorizado" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lRecibido">Recibido</label>
+              <input type="text" class="form-control" id="Recibido" placeholder="Unidad Santa Ana">
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" id="lMarca">Marca</label>
+              <input type="text" class="form-control" id="Marca" placeholder="Unidad Santa Ana">
+            </div>
+
+
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal" id="btnCancelar">Cancelar</button>
+              <button class="btn btn-primary" onclick="actualizarSoliN()" id="btnActualizar">Actualizar</button>
+              <button class="btn btn-primary" onclick="guardarSoli()" id="btnGuardar">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+
+
+
+
+
+      <!-- Incluye todos los Scripts de JavaScript que controlan la página -->
+      <?!= include('js'); ?>
+
+</body>
+
+</html>
