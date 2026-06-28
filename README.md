@@ -69,9 +69,9 @@ Mejoras del sistema
 - Normalizar los Sheets para no tener toda la informacion dentro de una misma tabla y por
 ocupar ID´s 
 - Separar los archivos, que no este todo envevido dentro de un mismo `.HTML`, que cada modal tenga su propio modulo y tener una mejor estructura dentro de los archivos
--Mejor carga del sistema, guardar los update cuando el sistema este en deployd para que
+- Mejor carga del sistema, guardar los update cuando el sistema este en deployd para que
 no se sobrecargue de solicitudes al momento de enviar una solicitud de transporte
-- 
+-
 
 Extensiones y próximos pasos sugeridos
 ------------------------------------
