@@ -1,6 +1,6 @@
 # Archivos de configuración de CLASP (CRUCIAL)
 # Este archivo contiene el ID del Script y no debe ser versionado.
-.clasp.json
+.clasp .json
 
 # Directorios de dependencias (si usas npm para herramientas de desarrollo)
 node_modules/
